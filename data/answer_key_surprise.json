@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E052": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E052 -> E070 -> E007 -> E055",
+      "name": "Xin Novak",
+      "phone": "6396741162230",
+      "account": "ACCT6742832",
+      "handle": "@xin.novak87",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E052 -> E070 -> E007 -> E055"
+      }
+    },
+    "E049": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E049 -> E055 -> E013 -> E066",
+      "name": "Elena Iqbal",
+      "phone": "6393884533779",
+      "account": "ACCT3886617",
+      "handle": "@elena.iqbal218",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E049 -> E055 -> E013 -> E066"
+      }
+    },
+    "E026": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E073 within minutes on 6 episodes",
+      "name": "Grace Mehta",
+      "phone": "6396524374754",
+      "account": "ACCT6526107",
+      "handle": "@grace.mehta418",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E073 within minutes on 6 episodes"
+      }
+    },
+    "E077": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "50 deposits clustered just under 10,000",
+      "name": "Noah Bakker",
+      "phone": "6396618481188",
+      "account": "ACCT6613607",
+      "handle": "@noah.bakker771",
+      "details": {
+        "type": "structuring",
+        "note": "50 deposits clustered just under 10,000"
+      }
+    },
+    "E023": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E089 within minutes on 6 episodes",
+      "name": "Raj Bakker",
+      "phone": "6399266159230",
+      "account": "ACCT9264923",
+      "handle": "@raj.bakker69",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E089 within minutes on 6 episodes"
+      }
+    },
+    "E030": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E030 -> E078 -> E043 -> E027",
+      "name": "Wes Patida",
+      "phone": "6393193219824",
+      "account": "ACCT3198744",
+      "handle": "@wes.patida258",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E030 -> E078 -> E043 -> E027"
+      }
+    },
+    "E032": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 14 senders then fan-out to 10 in ~3 days",
+      "name": "Wes Unger",
+      "phone": "6397612651177",
+      "account": "ACCT7611993",
+      "handle": "@wes.unger422",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 14 senders then fan-out to 10 in ~3 days"
+      }
+    },
+    "E018": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E025 within minutes on 6 episodes",
+      "name": "Ravi Iqbal",
+      "phone": "6396661192619",
+      "account": "ACCT6662876",
+      "handle": "@ravi.iqbal708",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E025 within minutes on 6 episodes"
+      }
+    },
+    "E012": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E043 within minutes on 6 episodes",
+      "name": "Omar Meyer",
+      "phone": "6393764684531",
+      "account": "ACCT3766313",
+      "handle": "@omar.meyer873",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E043 within minutes on 6 episodes"
+      }
+    },
+    "E033": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E052 within minutes on 6 episodes",
+      "name": "Hugo Gomes",
+      "phone": "6392949997381",
+      "account": "ACCT2948350",
+      "handle": "@hugo.gomes153",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E052 within minutes on 6 episodes"
+      }
+    },
+    "E050": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E050 -> E009 -> E107 -> E033",
+      "name": "Ravi Patida",
+      "phone": "6393571852264",
+      "account": "ACCT3572512",
+      "handle": "@ravi.patida659",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E050 -> E009 -> E107 -> E033"
+      }
+    },
+    "E068": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E037 within minutes on 6 episodes",
+      "name": "Wes Yamamoto",
+      "phone": "6392786049101",
+      "account": "ACCT2787653",
+      "handle": "@wes.yamamoto571",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E037 within minutes on 6 episodes"
+      }
+    }
+  },
+  "meta": {
+    "seed": 99
+  }
+}
