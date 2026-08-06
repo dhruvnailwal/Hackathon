@@ -298,7 +298,7 @@ def make_insight_card(rank, item):
     return card
 
 
-def build_dashboard(result):
+def build_dashboard(result, window=None):
     """Lay out every section from a PipelineResult."""
     from PySide6.QtWidgets import QHBoxLayout, QGridLayout
 
@@ -362,7 +362,7 @@ def build_dashboard(result):
 
     # wire re-run button
     from PySide6.QtCore import QObject
-    btn.clicked.connect(lambda: _rerun(btn, result))
+    btn.clicked.connect(lambda: _rerun(btn, result, window))
     return body
 
 
@@ -373,24 +373,27 @@ def _sources_dir() -> str:
     return collect_files([str(ROOT / (cfg.sources_dir or "data/sources"))])
 
 
-def _rerun(btn, result):
+def _rerun(btn, result, window=None):
     paths = _sources_dir()
     btn.setEnabled(False)
     btn.setText("running…")
     th = PipelineRunner(paths, btn)
     _RERUN_THREADS.append(th)
-    th.done.connect(lambda res: _apply_refresh(res, btn))
+    th.done.connect(lambda res: _apply_refresh(res, btn, window))
     th.start()
 
 
 _RERUN_THREADS = []
 
 
-def _apply_refresh(res, btn):
+def _apply_refresh(res, btn, window=None):
     from PySide6.QtWidgets import QMessageBox
     btn.setText("Run analysis")
     btn.setEnabled(True)
-    QMessageBox.information(btn, "Anomaly Lens", "Analysis finished.")
+    if window is not None and hasattr(window, "populate"):
+        window.populate(res)
+    else:
+        QMessageBox.information(btn, "Anomaly Lens", "Analysis finished.")
 
 
 class MainWindow(QWidget):
@@ -429,7 +432,7 @@ class MainWindow(QWidget):
             w = it.widget()
             if w:
                 w.deleteLater()
-        self.body.addLayout(build_dashboard(result))
+        self.body.addLayout(build_dashboard(result, self))
         self.content.setStyleSheet(
             "QWidget#ScrollContent { background: transparent; }"
         )
