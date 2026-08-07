@@ -61,6 +61,32 @@ def test_run_model_dispatch_returns_dicts():
         assert isinstance(out, dict)
 
 
+def test_run_model_dispatch_new_candidates():
+    """The model-zoo candidates must route through run_model and produce
+    unit-range scores (or empty dicts when the data cannot support them)."""
+    df = _f_df(n_entities=16, events_per=60)
+    candidates = (
+        "time_correlation_backward", "time_correlation_anypair",
+        "oddball_signed", "degree_deviation", "reciprocity",
+        "statml_eif", "statml_lof", "statml_mahalanobis", "statml_pca",
+        "statml_zscore", "benford_ks", "structuring_banded",
+    )
+    for name in candidates:
+        out = am.run_model(name, df)
+        assert isinstance(out, dict), name
+        assert all(0.0 <= v <= 1.0 for v in out.values()), name
+
+
+def test_fusion_variants_rank():
+    scores = {"benford": {"E001": 0.95, "E002": 0.3},
+              "structuring": {"E001": 0.8, "E003": 0.9}}
+    df = _f_df(n_entities=4, events_per=5)
+    for fuse in (am.fuse_rank_borda, am.fuse_rank_average, am.fuse_score_mean):
+        r = fuse(dict(scores), df).rank
+        assert r, "empty ranking produced"
+        assert r[0]["score"] >= r[-1]["score"]
+
+
 def test_fusion_ranks_and_explains():
     scores = {"benford": {"E001": 0.95, "E002": 0.3},
               "structuring": {"E001": 0.8, "E003": 0.9}}

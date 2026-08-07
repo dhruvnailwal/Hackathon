@@ -18,6 +18,9 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from scipy import stats as _st
+from scipy.spatial.distance import mahalanobis as _sp_mahalanobis
+from sklearn.covariance import MinCovDet
+from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 
@@ -134,6 +137,65 @@ def fit_time_correlation(df: pd.DataFrame, tolerance_minutes: int = 25,
             out[eid] = min(s / float(min_episodes), 1.0)
         elif t > 0:
             out[eid] = 0.2 * min(t / 3.0, 1.0) + (0.3 * s / float(min_episodes))
+    return out
+
+
+def fit_time_correlation_backward(df: pd.DataFrame, tolerance_minutes: int = 25,
+                                  min_episodes: int = 3) -> Dict[str, float]:
+    """Reverse colocation: transfer lands, then a call to the same party.
+    Picks up 'call after transfer' laundering choreography."""
+    bank = df[df["source"] == "bank"].copy()
+    cdr = df[df["source"] != "bank"].copy()
+    if bank.empty or cdr.empty:
+        return {}
+    bank = bank.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
+    cdr = cdr.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
+    bank["ts"] = pd.to_datetime(bank["timestamp"])
+    cdr["ts"] = pd.to_datetime(cdr["timestamp"])
+    bank = bank.sort_values("ts")
+    cdr = cdr.sort_values("ts")
+    matched = pd.merge_asof(
+        bank, cdr, on="ts", direction="forward",
+        tolerance=pd.Timedelta(minutes=tolerance_minutes), suffixes=("_x", "_y"),
+    )
+    matched = matched[matched["entity_id_y"].notna()]
+    if matched.empty:
+        return {}
+    same = (matched["counterparty_id_x"] == matched["counterparty_id_y"]).to_numpy()
+    out = {}
+    for eid in set(matched["entity_id_x"]):
+        s = int(same[matched["entity_id_x"].to_numpy() == eid].sum())
+        t = int((~same)[matched["entity_id_x"].to_numpy() == eid].sum())
+        if s >= min_episodes:
+            out[eid] = min(s / float(min_episodes), 1.0)
+        elif t > 0:
+            out[eid] = 0.2 * min(t / 3.0, 1.0) + (0.3 * s / float(min_episodes))
+    return out
+
+
+def fit_time_correlation_anypair(df: pd.DataFrame, tolerance_minutes: int = 25,
+                                 min_episodes: int = 3) -> Dict[str, float]:
+    """Same-party co-occurrence window: any call to X within tol of any transfer
+    to X (no asof pairing — count of same-party overlaps per entity)."""
+    bank = df[df["source"] == "bank"].dropna(subset=["timestamp", "entity_id", "counterparty_id"]).copy()
+    cdr = df[df["source"] != "bank"].dropna(subset=["timestamp", "entity_id", "counterparty_id"]).copy()
+    if bank.empty or cdr.empty:
+        return {}
+    bank["ts"] = pd.to_datetime(bank["timestamp"]).to_numpy()
+    cdr["ts"] = pd.to_datetime(cdr["timestamp"]).to_numpy()
+    tol = pd.Timedelta(minutes=tolerance_minutes)
+    out = {}
+    for eid, sub in bank.groupby("entity_id"):
+        calls = cdr[cdr["entity_id"] == eid]
+        if calls.empty:
+            continue
+        same = 0
+        for b_row in sub.itertuples():
+            for c_row in calls.itertuples():
+                if c_row.counterparty_id == b_row.counterparty_id and abs(b_row.ts - c_row.ts) <= tol:
+                    same += 1
+        if same >= min_episodes:
+            out[eid] = min(same / float(min_episodes), 1.0)
     return out
 
 
@@ -308,6 +370,68 @@ def fit_statml_lof(df: pd.DataFrame, n_neighbors: int = 20,
     return _scoremin(raw, X.index)
 
 
+def fit_statml_mahalanobis(df: pd.DataFrame) -> Dict[str, float]:
+    """Stage-E candidate: robust Mahalanobis distance.
+
+    MinCovDet (Rousseeuw) estimates a covariance that resists contamination;
+    entities far from the population centre in this metric are structural
+    outliers even when every marginal looks normal.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    try:
+        mcd = MinCovDet(store_precision=False, random_state=0).fit(arr)
+    except ValueError:
+        # too few samples / non-invertible; fall back to plain limiting distance
+        try:
+            cov = np.cov(arr, rowvar=False)
+            inv = np.linalg.pinv(cov + EPS * np.eye(cov.shape[0]))
+        except np.linalg.LinAlgError:
+            return {}
+        mean = arr.mean(axis=0)
+        d = np.array([_sp_mahalanobis(row, mean, inv) for row in arr])
+        return _scoremin(d, X.index)
+    d = np.atleast_1d(mcd.mahalanobis(arr))
+    return _scoremin(d, X.index)
+
+
+def fit_statml_pca(df: pd.DataFrame, n_components: int = 4) -> Dict[str, float]:
+    """Stage-E candidate: PCA reconstruction error.
+
+    Projects the feature matrix onto a few dominant components and measures
+    reconstruction error — points that need unusual coordinates (isolated in
+    residual space) are anomalous.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    k = min(n_components, arr.shape[1] - 1) if arr.shape[1] > 1 else 1
+    if k < 1:
+        return {}
+    pca = PCA(n_components=k, random_state=0).fit(arr)
+    recon = pca.inverse_transform(pca.transform(arr))
+    err = np.linalg.norm(arr - recon, axis=1)
+    return _scoremin(err, X.index)
+
+
+def fit_statml_zscore(df: pd.DataFrame) -> Dict[str, float]:
+    """Stage-E candidate: polarising z-score (max absolute std across features).
+
+    For each entity take its most extreme unit-normalized feature — a cheap,
+    interpretable surrogate that the forests often beat only on population
+    shape.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    z = np.abs(arr).max(axis=1)
+    return _scoremin(z, X.index)
+
+
 # ===========================================================================
 # D — network candidates (OddBall-style density/degree deviation)
 # ===========================================================================
@@ -337,6 +461,64 @@ def fit_oddball(df: pd.DataFrame) -> Dict[str, float]:
     # hub" endpoints
     raw = pd.Series(np.abs(resid_s), index=deg[ok].index)
     return _scoremin(raw.to_numpy(), raw.index)
+
+
+def fit_oddball_signed(df: pd.DataFrame) -> Dict[str, float]:
+    """Signed OddBall residual: only entities ABOVE the density line (their
+    graph carries far more weight than degree predicts) are anomalous, not the
+    low-maintenance hubs. No abs() — flags mass-stuffed money mules."""
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    deg = edges.groupby("entity_id")["counterparty_id"].nunique()
+    wgt = edges.groupby("entity_id").size()
+    ok = (deg > 0)
+    if not ok.any() or ok.sum() < 8:
+        return {}
+    x = np.log(deg[ok].to_numpy(float))
+    y = np.log1p(wgt[ok].to_numpy(float))
+    slope, intercept, _, _, _ = _st.linregress(x, y)
+    resid = y - (slope * x + intercept)
+    raw = pd.Series(resid, index=deg[ok].index)
+    return _scoremin(raw.to_numpy(), raw.index)
+
+
+def fit_degree_deviation(df: pd.DataFrame) -> Dict[str, float]:
+    """Degree z-score: entities whose degree (number of distinct counterparties)
+    is far from the population mean — a super-connected hub."""
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    deg = edges.groupby("entity_id")["counterparty_id"].nunique()
+    if deg.nunique() < 3:
+        return {}
+    z = (deg - deg.mean()) / (deg.std() + EPS)
+    raw = pd.Series(np.abs(z), index=deg.index)
+    return _scoremin(raw.to_numpy(), raw.index)
+
+
+def fit_reciprocity(df: pd.DataFrame) -> Dict[str, float]:
+    """Directed-edge reciprocity deviation.
+
+    Entities that BOTH fan-out to many parties AND are fanned-in from many
+    parties create dense two-way clusters = classic launderer hub that moves
+    money in and out of a narrow wallet set. Score = product of in/out degree
+    normalized against population.
+    """
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    dir_col = df["direction"].fillna("out") if "direction" in df else pd.Series("out", index=df.index)
+    out_n = edges[dir_col.reindex(edges.index).astype(str) != "credit"].groupby("entity_id")["counterparty_id"].nunique()
+    in_n = edges[dir_col.reindex(edges.index).astype(str) == "credit"].groupby("entity_id")["counterparty_id"].nunique()
+    both = out_n.reindex(in_n.index.union(out_n.index)).fillna(0) * in_n.reindex(in_n.index.union(out_n.index)).fillna(0)
+    if both.empty or both.max() == 0:
+        return {}
+    log_both = np.log1p(both)
+    out = {}
+    for eid, v in log_both.items():
+        out[eid] = min(v / float(log_both.max()), 1.0)
+    return out
 
 
 # ===========================================================================
@@ -374,6 +556,64 @@ def fit_benford(df):
     if not out:
         return None
     return out
+
+
+def fit_benford_ks(df):
+    """Benford alternate: population-relative Kolmogorov–Smirnov style.
+
+    Builds the population first-digit distribution (as expected frequencies),
+    then reports each entity's max-|obs−exp| "KS statistic" as the deviation.
+    Complements the chi-square variant (which over-flags thin samples).
+    """
+    amt = df.dropna(subset=["amount"])
+    amt = amt[amt["amount"] > 0]
+    if amt.empty:
+        return None
+    first_all = np.floor(amt["amount"].to_numpy(float)
+                         / np.power(10.0, np.floor(np.log10(amt["amount"].to_numpy(float))))).astype(int)
+    mask = (first_all >= 1) & (first_all <= 9)
+    if mask.sum() == 0:
+        return None
+    global_hist = np.bincount(first_all[mask] - 1, minlength=9).astype(float)
+    exp = global_hist / global_hist.sum()
+    out = {}
+    for eid, sub in amt.groupby("entity_id"):
+        if len(sub) < 8:
+            continue
+        vals = sub["amount"].to_numpy(dtype=float)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            first = np.floor(vals / np.power(10.0, np.floor(np.log10(vals)))).astype(int)
+        obs = np.zeros(9)
+        for f in first:
+            if 1 <= f <= 9:
+                obs[f - 1] += 1
+        if obs.sum() < 8:
+            continue
+        obs = obs / obs.sum()
+        ks = float(np.max(np.abs(np.cumsum(obs) - np.cumsum(exp))))
+        out[eid] = min(4.0 * ks, 1.0)
+    if not out:
+        return None
+    return out
+
+
+def fit_structuring_banded(df: pd.DataFrame, threshold: float = 10000.0,
+                           bands: int = 3) -> Dict[str, float]:
+    """Structuring variant: near-threshold WITHOUT the ÷√total dampening.
+
+    Counts only the band rows and rewards *quantity of band events* directly
+    (counts^1.2), so persistent small-cutters rank high without the total-event
+    penalty that the baseline applies."""
+    amt = df.dropna(subset=["amount"])
+    if amt.empty:
+        return None
+    band_rows = amt[(amt["amount"] >= 0.8 * threshold) & (amt["amount"] < threshold)]
+    if band_rows.empty:
+        return None
+    counts = band_rows.groupby("entity_id").size()
+    score = counts ** 1.2
+    mx = score.max() or 1.0
+    return {e: float(v / mx) for e, v in score.items()}
 
 
 # ===========================================================================
@@ -549,6 +789,91 @@ def fuse_rank_borda(scores: Dict[str, Dict[str, float]], df: pd.DataFrame,
     return FusionBorda(scores, df, max_bonus=max_bonus)
 
 
+class FusionRankAverage(Fusion):
+    """Rank-average fusion (no bonus): each model's rank is averaged over the
+    number of models that scored the entity. Pure agreement — a single-model
+    alarm cannot surface on its own."""
+
+    def _fuse(self) -> None:
+        models = list(self.scores.values())
+        n_models = max(len([s for s in models if s]), 1)
+        points: Dict[str, float] = {}
+        seen: Dict[str, int] = {}
+        for s in models:
+            if not s:
+                continue
+            m = len(s)
+            if m <= 1:
+                for eid in s:
+                    points[eid] = points.get(eid, 0.0)
+                    seen[eid] = seen.get(eid, 0) + 1
+                continue
+            order = sorted(s, key=lambda e: (s[e], e))
+            rank = {e: i / (m - 1) for i, e in enumerate(order)}
+            for eid, r in rank.items():
+                points[eid] = points.get(eid, 0.0) + r
+                seen[eid] = seen.get(eid, 0) + 1
+        agg = {eid: p / max(seen.get(eid, 1), 1) for eid, p in points.items()}
+        self._finalize(agg)
+
+
+class FusionScoreMean(Fusion):
+    """Score-mean fusion: arithmetic mean of normalized model scores. Weights
+    every model equally; models that never score an entity contribute 0."""
+
+    def _fuse(self) -> None:
+        models = [s for s in self.scores.values() if s]
+        if not models:
+            return self._finalize({})
+        ids = set()
+        for s in models:
+            ids.update(s.keys())
+        agg = {}
+        for eid in ids:
+            vals = [s.get(eid, 0.0) for s in models]
+            agg[eid] = float(np.mean(vals))
+        self._finalize(agg)
+
+
+class FusionWeightedSum(Fusion):
+    """Weighted-sum fusion: each model's score is weighted by a family weight
+    (default uniform 1.0) before summing — keeps score magnitudes, unlike the
+    rank fusions."""
+
+    def __init__(self, normalized_scores, df, weights: Dict[str, float] | None = None):
+        self.weights = weights or {}
+        super().__init__(normalized_scores, df)
+
+    def _fuse(self) -> None:
+        ids = set()
+        for s in self.scores.values():
+            ids.update(s.keys())
+        agg = {}
+        for eid in ids:
+            total = 0.0
+            w_total = 0.0
+            for m, s in self.scores.items():
+                if not s:
+                    continue
+                total += self.weights.get(m, 1.0) * s.get(eid, 0.0)
+                if eid in s:
+                    w_total += self.weights.get(m, 1.0)
+            agg[eid] = total / max(w_total, 1.0)
+        self._finalize(agg)
+
+
+def fuse_rank_average(scores, df):
+    return FusionRankAverage(scores, df)
+
+
+def fuse_score_mean(scores, df):
+    return FusionScoreMean(scores, df)
+
+
+def fuse_weighted_sum(scores, df, weights=None):
+    return FusionWeightedSum(scores, df, weights=weights)
+
+
 # ===========================================================================
 # dispatch used by the pipeline
 # ===========================================================================
@@ -556,20 +881,42 @@ def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
               structuring_threshold: float = 10000.0) -> Dict[str, float]:
     if name == "time_correlation":
         return fit_time_correlation(df, tolerance_minutes)
+    if name == "time_correlation_backward":
+        return fit_time_correlation_backward(df, tolerance_minutes)
+    if name == "time_correlation_anypair":
+        return fit_time_correlation_anypair(df, tolerance_minutes)
     if name == "network":
         return fit_oddball(df)
     if name == "burst":
         return fit_network(df)
+    if name == "oddball":
+        return fit_oddball(df)
+    if name == "oddball_signed":
+        return fit_oddball_signed(df)
+    if name == "degree_deviation":
+        return fit_degree_deviation(df)
+    if name == "reciprocity":
+        return fit_reciprocity(df)
     if name == "statml":
         return fit_statml(df)
     if name == "statml_eif":
         return fit_statml_eif(df)
     if name == "statml_lof":
         return fit_statml_lof(df)
+    if name == "statml_mahalanobis":
+        return fit_statml_mahalanobis(df)
+    if name == "statml_pca":
+        return fit_statml_pca(df)
+    if name == "statml_zscore":
+        return fit_statml_zscore(df)
     if name == "benford":
         return fit_benford(df)
+    if name == "benford_ks":
+        return fit_benford_ks(df)
     if name == "structuring":
         return fit_structuring(df, threshold=structuring_threshold)
+    if name == "structuring_banded":
+        return fit_structuring_banded(df, threshold=structuring_threshold)
     if name == "behavioral":
         return fit_behavioral(df)
     return {}

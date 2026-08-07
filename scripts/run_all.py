@@ -48,6 +48,7 @@ def main() -> int:
     rc |= run("Real-world dataset validation", "scripts/real_dataset_validate.py")
     rc |= run("Internet-sample fetch + pipeline", "scripts/fetch_samples.py")
     rc |= run("Model-zoo comparison", "scripts/model_zoo_eval.py")
+    rc |= run("Model matrix (per-stage candidates)", "scripts/model_matrix_eval.py")
     rc |= run("Hyperparameter sweep", "scripts/tune.py")
     rc |= run("Research-format validation", "scripts/research_formats_validate.py",
               ["--out", "results/research_formats"])
