@@ -506,14 +506,23 @@ class FusionBorda(Fusion):
     Each model casts a rank vote: the entity with the highest score in a
     model gets (m-1) points, the lowest 0, entities the model never scored
     get 0. Points are summed across models and normalized by the number of
-    models — so only cross-model *agreement* elevates an entity, at the cost
-    of single-model strong signals (tunable by including the max vote).
+    models — so only cross-model *agreement* elevates an entity.
+
+    A ``max_bonus`` term re-weights single-model strong signals (e.g. a
+    colocation entity with time_correlation=1.0) that pure rank-averaging
+    buries: points = borda + max_bonus * best_model_score. Keeps agreement
+    dominant but never lets a perfect single-model alarm vanish from the top.
     """
+
+    def __init__(self, normalized_scores, df, max_bonus: float = 0.25):
+        self.max_bonus = max_bonus
+        super().__init__(normalized_scores, df)
 
     def _fuse(self) -> None:
         models = list(self.scores.values())
         n_models = max(len(models), 1)
         points: Dict[str, float] = {}
+        best: Dict[str, float] = {}
         for s in models:
             if not s:
                 continue
@@ -521,17 +530,23 @@ class FusionBorda(Fusion):
             if m <= 1:
                 for eid in s:
                     points[eid] = points.get(eid, 0.0)
+                    best[eid] = max(best.get(eid, 0.0), s[eid])
                 continue
             order = sorted(s, key=lambda e: (s[e], e))
             rank = {e: i / (m - 1) for i, e in enumerate(order)}
             for eid, r in rank.items():
                 points[eid] = points.get(eid, 0.0) + r
-        agg = {eid: min(p / n_models, 1.0) for eid, p in points.items()}
+                best[eid] = max(best.get(eid, 0.0), s[eid])
+        agg = {
+            eid: min(p / n_models + self.max_bonus * best.get(eid, 0.0), 1.0)
+            for eid, p in points.items()
+        }
         self._finalize(agg)
 
 
-def fuse_rank_borda(scores: Dict[str, Dict[str, float]], df: pd.DataFrame) -> FusionBorda:
-    return FusionBorda(scores, df)
+def fuse_rank_borda(scores: Dict[str, Dict[str, float]], df: pd.DataFrame,
+                    max_bonus: float = 0.25) -> FusionBorda:
+    return FusionBorda(scores, df, max_bonus=max_bonus)
 
 
 # ===========================================================================
