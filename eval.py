@@ -105,6 +105,8 @@ def main():
     ap.add_argument("--data", default="data/sources")
     ap.add_argument("--key", default="data/answer_key.json")
     ap.add_argument("--surprise-key", default="data/answer_key_surprise.json")
+    ap.add_argument("--out", default="",
+                    help="optional results/... directory to snapshot JSON+MD into")
     args = ap.parse_args()
 
     from aml.loaders import collect_files
@@ -117,6 +119,54 @@ def main():
 
     truth_anom, truth_type = to_records(res.rankings, truth)
     metrics = recall_precision(res.rankings, truth_anom, truth_type)
+
+    # ---- surprise hold-out set -----------------------------------------
+    surprise_metrics = None
+    surprise_n_mapped = 0
+    if args.surprise_key and Path(args.surprise_key).exists():
+        s_truth = load_truth(args.surprise_key)
+        s_mapped = map_truth_to_entities(s_truth, res.entity_map)
+        surp_anom, surp_type = to_records(res.rankings, s_mapped,
+                                          key_types=("surprise",))
+        surprise_n_total = len(s_truth)
+        mapped_count = s_mapped["entity_ids"].apply(len)
+        surprise_n_mapped = int((mapped_count > 0).sum())
+        if surp_anom:
+            surprise_metrics = recall_precision(res.rankings, surp_anom, surp_type)
+
+    # ---- snapshot (--out results/baseline) -----------------------------
+    snapshot = None
+    if args.out:
+        out_dir = Path(args.out)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        snapshot = {
+            "recall_precision": {k: (v if k != "type_recall@10" else dict(v))
+                                 for k, v in metrics.items()},
+            "surprise": {
+                "mapped": surprise_n_mapped,
+                "recall_precision": surprise_metrics and {
+                    k: (v if k != "type_recall@10" else dict(v))
+                    for k, v in surprise_metrics.items()
+                },
+            },
+            "sufficiency": {k: v.status for k, v in res.sufficiency.items()},
+            "n_entities": len(res.rankings),
+            "top10": res.rankings[:10],
+            "model_scores_n": {k: len(v) for k, v in res.model_scores.items()},
+        }
+        (out_dir / "eval.json").write_text(
+            json.dumps(snapshot, indent=2, default=str), encoding="utf-8")
+        md_lines = ["# Evaluation snapshot",
+                    f"- anomalies={len(truth_anom)} top10={len(res.rankings[:10])}",
+                    f"- recall@5={metrics['recall@5']:.3f} precision@5={metrics['precision@5']:.3f}",
+                    f"- recall@10={metrics['recall@10']:.3f} precision@10={metrics['precision@10']:.3f}",
+                    "",
+                    "| rank | entity | score | models |",
+                    "|---|---|---|---|"]
+        for i, r in enumerate(res.rankings[:10], 1):
+            md_lines.append(f"| {i} | {r['entity_id']} | {r['score']} | "
+                            f"{','.join(r['models_fired'])} |")
+        (out_dir / "eval.md").write_text("\n".join(md_lines) + "\n", encoding="utf-8")
 
     print("=" * 60)
     print("PIPELINE SUMMARY")
@@ -136,6 +186,18 @@ def main():
         else:
             print(f"  {k:14s} {v:.3f}")
     print("=" * 60)
+    if surprise_metrics:
+        overlap = len(truth_anom & surp_anom)
+        print(f"SURPRISE HOLD-OUT  (mapped {surprise_n_mapped} of {surprise_n_total} "
+              f"surprise entities; {overlap} shared with main key)")
+        for k, v in surprise_metrics.items():
+            if k == "type_recall@10":
+                print("  recall@10 by type:")
+                for t, r in sorted(v.items()):
+                    print(f"    {t:16s} {r:.2f}")
+            else:
+                print(f"  {k:14s} {v:.3f}")
+        print("=" * 60)
     print("TOP 10 RANKINGS")
     for i, r in enumerate(res.rankings[:10], 1):
         flag = "  <-- ANOMALY" if r["entity_id"] in truth_anom else ""

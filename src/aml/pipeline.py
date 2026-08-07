@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from .schema import SourceResolved
-from .schema_detect import detect_dataframe, normalize_source
+from .schema_detect import detect_dataframe
 from .sufficiency import SufficiencyEngine, SufficiencyVerdict
 
 UNIFIED_COLUMNS = [
@@ -49,11 +49,11 @@ class Pipeline:
             det = detect_dataframe(loaded.df, file=loaded.file)
             if loaded.warning:
                 det.warnings.insert(0, loaded.warning)
-            norm, warns = normalize_source(loaded.df, det.columns, det.source_type)
+            norm = det.normalized
             rs = SourceResolved(
                 source=det.source_type, file=det.file,
                 resolved_fields=det.resolved_slots,
-                warnings=det.warnings + warns,
+                warnings=list(det.warnings),
                 n_rows=det.n_rows, n_entities=0,
             )
             frames.append(norm)
@@ -108,7 +108,7 @@ class Pipeline:
                                   structuring_threshold=self.structuring_threshold)
                 if sc:
                     scores[model] = sc
-        fusion = _m.fuse_model_scores(scores, df)
+        fusion = _m.fuse_rank_borda(scores, df)
         result.model_scores = scores
         result.rankings = fusion.rank
         result.explanations = fusion.explanation

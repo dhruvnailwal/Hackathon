@@ -125,7 +125,7 @@ ACTOR_ID_ALIASES: Dict[str, List[str]] = {
     "actor_id": [
         "subscriber", "subscriber_id", "customer", "customer_id", "client_id",
         "party_id", "iban", "account", "account_id", "account_number", "account_no",
-        "msisdn", "caller_msisdn", "originating_number", "caller", "user_id",
+        "acct", "acct_id", "msisdn", "caller_msisdn", "originating_number", "caller", "user_id",
         "device_id", "device", "handle", "user_handle", "username", "user_name",
     ],
 }

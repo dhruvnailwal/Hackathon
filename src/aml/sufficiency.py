@@ -62,6 +62,11 @@ class SufficiencyEngine:
         return None
 
     def _overall_volume_note(self, n_rows: int, n_entities: int) -> Optional[str]:
+        if n_entities == 0 and n_rows > 0:
+            return (
+                "no entity dimension resolved: rows cannot be assigned to entities; "
+                "statistical models have no population to score"
+            )
         if n_entities and n_rows / n_entities < self.min_events_per_entity:
             return (
                 f"insufficient volume for statistical reliability (n≈{n_rows}/{n_entities}"
@@ -72,6 +77,7 @@ class SufficiencyEngine:
     # -- per-model bespoke reasons -----------------------------------------
     def evaluate(self) -> Dict[str, SufficiencyVerdict]:
         verd: Dict[str, SufficiencyVerdict] = {}
+        entity_note = self._no_entity_note()
 
         # schema detection / entity resolution always run
         verd["schema_detection"] = SufficiencyVerdict(
@@ -130,6 +136,12 @@ class SufficiencyEngine:
                     "statml", VERDICT_BLOCKED, set(), {"amount", "timestamp"}, 0.0,
                     "stat/ML blocked: no amount or timestamp dimension resolved",
                 )
+        elif "timestamp" not in self.populated:
+            verd["statml"] = SufficiencyVerdict(
+                "statml", VERDICT_BLOCKED, {"amount"}, {"amount", "timestamp"}, 0.5,
+                "stat/ML blocked: amount resolved but no timestamp dimension; "
+                "the feature vector requires event times",
+            )
         else:
             verd["statml"] = SufficiencyVerdict(
                 "statml", VERDICT_SUPPORTED, {"amount", "timestamp"}, {"amount", "timestamp"}, 1.0,
@@ -170,9 +182,30 @@ class SufficiencyEngine:
                 verd["time_correlation"] = SufficiencyVerdict(
                     "time_correlation", VERDICT_DEGRADED, {"timestamp"}, {"timestamp"}, 1.0, note,
                 )
+
+        # entity-less data: rows exist but no actor/entity dimension resolved,
+        # so every entity-scored model degrades (honest "insufficient data")
+        if entity_note:
+            for model in ("time_correlation", "network", "statml",
+                          "benford", "structuring", "behavioral"):
+                v = verd.get(model)
+                if v is not None and v.status == VERDICT_SUPPORTED:
+                    verd[model] = SufficiencyVerdict(
+                        v.model, VERDICT_DEGRADED, v.populated, v.required, v.ratio, entity_note,
+                    )
         return verd
 
     # -- helpers -----------------------------------------------------------
+    def _no_entity_note(self) -> Optional[str]:
+        total_rows = sum(rs.n_rows for rs in self.resolved_sources)
+        total_entities = sum(rs.n_entities for rs in self.resolved_sources)
+        if total_entities == 0 and total_rows > 0:
+            return (
+                "no entity dimension resolved: rows cannot be assigned to entities; "
+                "entity-scored models have no population to score"
+            )
+        return None
+
     def _overall_note(self) -> Optional[str]:
         total_rows = sum(rs.n_rows for rs in self.resolved_sources)
         total_entities = sum(rs.n_entities for rs in self.resolved_sources)

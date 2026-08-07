@@ -15,6 +15,7 @@ Format handling:
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -114,6 +115,22 @@ def load_ndjson(path: Path) -> LoadedSource:
     return LoadedSource(df=df, file=str(path), format="jsonl")
 
 
+_KV_RE = re.compile(r"""(\S+)\s*=\s*("(?:\\.|[^"])*"|[^\s=]+)(?=\s|$)""")
+
+
+def _kv_pairs(line: str) -> List[tuple]:
+    """Extract (key, value) pairs from a kv log line. Values may be
+    double-quoted to contain spaces: ``c0="2024-01-19 09:00:00"``.
+    """
+    out = []
+    for m in _KV_RE.finditer(line):
+        k, v = m.group(1), m.group(2)
+        if len(v) >= 2 and v[0] == '"' and v[-1] == '"':
+            v = v[1:-1]
+        out.append((k, v))
+    return out
+
+
 # ---------------------------------------------------------------------------
 # TEXT
 # ---------------------------------------------------------------------------
@@ -136,15 +153,13 @@ def _parse_text_lines(lines: List[str]) -> Optional[List[dict]]:
     if objs and len(objs) >= 0.5 * len(non_empty):
         return _normalize_records(objs)
 
-    # pass 2: key=value lines
+    # pass 2: key=value lines (single-pair lines are valid kv logs; quoted
+    # values may contain spaces)
     kv_rows = []
     for ln in non_empty:
-        parts = [p for p in ln.split() if "=" in p]
-        if len(parts) >= 2:
-            try:
-                kv_rows.append(dict(p.split("=", 1) for p in parts))
-            except ValueError:
-                pass
+        pairs = _kv_pairs(ln)
+        if len(pairs) >= 1:
+            kv_rows.append(dict(pairs))
     if kv_rows and len(kv_rows) >= 0.5 * len(non_empty):
         return kv_rows
 

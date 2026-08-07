@@ -2,11 +2,13 @@
 
 Every score function returns {entity_id: float} (higher = more anomalous).
   C time_correlation : merge_asof cross-source colocation timing
-  D network          : OddBall-style density/degree deviations
+  D network          : OddBall egonet density/degree deviation (default);
+                        ``burst`` keeps the short-window concentration model
   E statml           : Isolation Forest on a shared per-entity feature vector
+                        (``eif``/``lof`` variants live in the model zoo)
   H benford          : first-digit chi-square deviation on amounts
   H structuring      : threshold-proximity structuring rule
-  F fusion           : normalize + aggregate -> ranked insights + explanations (G)
+  F fusion           : Borda rank fusion -> ranked insights + explanations (G)
 """
 from __future__ import annotations
 
@@ -17,6 +19,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats as _st
 from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
 
 EPS = 1e-9
 
@@ -186,28 +189,154 @@ def fit_network(df: pd.DataFrame) -> Dict[str, float]:
 # ===========================================================================
 # E — stat / ML (Isolation Forest on population-relative features)
 # ===========================================================================
-def fit_statml(df: pd.DataFrame) -> Dict[str, float]:
+_EVID_FEATURES = ["n_events", "amt_total", "amt_mean", "amt_max", "amt_std",
+                  "fan_out", "fan_in", "gap_max", "gap_min", "gap_std"]
+
+
+def _feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
+    """Shared Stage-E feature matrix, preprocessed exactly like fit_statml."""
     feats = build_features(df)
     if feats.empty or feats.shape[0] < 5:
-        return {}
-    cols = [c for c in feats.columns if c != "entity_id"]
-    X = feats[cols].copy()
-    # log-transform heavy-tailed counts, then z-score every column
-    log_cols = ["n_events", "amt_total", "amt_mean", "amt_max", "amt_std",
-                "fan_out", "fan_in", "gap_max", "gap_min", "gap_std"]
-    for c in log_cols:
+        return pd.DataFrame()
+    X = feats[[c for c in feats.columns if c != "entity_id"]].copy()
+    for c in _EVID_FEATURES:
         if c in X:
             X[c] = np.log1p(X[c].clip(lower=0))
     X = X.astype(float).apply(lambda s: (s - s.mean()) / (s.std() + EPS))
     X = np.nan_to_num(X.to_numpy(), nan=0.0, posinf=0.0, neginf=0.0)
-    clf = IsolationForest(contamination=0.06, random_state=0, n_estimators=400)
+    return pd.DataFrame(X, index=feats.index)
+
+
+def fit_statml(df: pd.DataFrame, contamination: float = 0.06,
+               n_estimators: int = 400) -> Dict[str, float]:
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    clf = IsolationForest(contamination=contamination, random_state=0,
+                          n_estimators=n_estimators)
     clf.fit(X)
     raw = -clf.score_samples(X)
-    s = pd.Series(raw, index=feats.index)
+    return _scoremin(raw, X.index)
+
+
+# shared piece of the score pipeline
+def _scoremin(raw: np.ndarray, index) -> Dict[str, float]:
+    s = pd.Series(raw, index=index)
     s = _minmax(s)
-    # dampen: only entities clearly outside the mass keep high scores
     s = np.power(s, 2.0)
     return s.to_dict()
+
+
+_EIF_GAMMA = 0.5772156649015329
+
+
+def _eif_path_lengths(X: np.ndarray, n_trees: int = 200, max_depth: int = 14,
+                      random_state: int = 0) -> np.ndarray:
+    """Extended Isolation Forest (Hariri et al. 2019).
+
+    Axis-parallel cuts of plain IF are replaced by random hyperplanes
+    (uniform random unit slopes), so oblique structures that axis cuts can
+    never separate are isolated too. Depths are averaged over trees.
+    """
+    rng = np.random.default_rng(random_state)
+    n, d = X.shape
+    sample = min(n, 256)
+    depths = np.zeros(n)
+    for _ in range(n_trees):
+        cols = rng.choice(n, size=sample, replace=False)
+        pts = X[cols]
+        stack = [(np.arange(sample), 0)]
+        while stack:
+            inds, depth = stack.pop()
+            k = len(inds)
+            if k <= 1:
+                continue
+            if depth >= max_depth:
+                depths[cols[inds]] += _avg_path_constant(k)
+                continue
+            v = rng.normal(size=d)
+            norm = float(np.linalg.norm(v))
+            if norm < EPS:
+                depths[cols[inds]] += _avg_path_constant(k)
+                continue
+            proj = pts[inds] @ (v / norm)
+            lo, hi = float(proj.min()), float(proj.max())
+            if hi - lo < EPS:
+                # identical points project identically under every slope:
+                # the node is a leaf, pay the expected residual path c(k)
+                depths[cols[inds]] += _avg_path_constant(k)
+                continue
+            cut = rng.uniform(lo, hi)
+            le = inds[proj <= cut]
+            gt = inds[proj > cut]
+            if len(le) == 0 or len(gt) == 0:
+                depths[cols[inds]] += _avg_path_constant(k)
+                continue
+            depths[cols[inds]] += 1
+            stack.append((le, depth + 1))
+            stack.append((gt, depth + 1))
+    return depths
+
+
+def _avg_path_constant(n: int) -> float:
+    if n <= 1:
+        return 1.0
+    return 2.0 * np.log(n - 1) + 2.0 * _EIF_GAMMA - 2.0 * (n - 1) / n
+
+
+def fit_statml_eif(df: pd.DataFrame, n_trees: int = 200,
+                   max_depth: int = 14) -> Dict[str, float]:
+    """Stage-E candidate: Extended Isolation Forest variant."""
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    depths = _eif_path_lengths(X.to_numpy(), n_trees=n_trees, max_depth=max_depth)
+    mean_c = _avg_path_constant(len(X))
+    scores = np.power(2.0, -(depths / n_trees) / mean_c)
+    return _scoremin(scores, X.index)
+
+
+def fit_statml_lof(df: pd.DataFrame, n_neighbors: int = 20,
+                   contamination: float = 0.06) -> Dict[str, float]:
+    """Stage-E candidate: Local Outlier Factor on the shared feature matrix."""
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    clf = LocalOutlierFactor(n_neighbors=n_neighbors, contamination=contamination)
+    clf.fit(X)
+    raw = -clf.negative_outlier_factor_  # larger = more isolated
+    return _scoremin(raw, X.index)
+
+
+# ===========================================================================
+# D — network candidates (OddBall-style density/degree deviation)
+# ===========================================================================
+def fit_oddball(df: pd.DataFrame) -> Dict[str, float]:
+    """OddBall null model (Akoglu et al. 2010) applied to egonets.
+
+    For every entity, let d = number of distinct counterparties (degree) and
+    w = number of transactions (edge count). OddBall fits w ~ d^{k} and flags
+    entities whose mass deviates from the expected density line — tiny
+    counterparty bases carrying large transaction volume (a classic money
+    mule / fan-out signature).
+    """
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    deg = edges.groupby("entity_id")["counterparty_id"].nunique()
+    wgt = edges.groupby("entity_id").size()
+    ok = (deg > 0)
+    if not ok.any() or ok.sum() < 8:
+        return {}
+    x = np.log(deg[ok].to_numpy(float))
+    y = np.log1p(wgt[ok].to_numpy(float))
+    slope, intercept, _, _, _ = _st.linregress(x, y)
+    resid = y - (slope * x + intercept)
+    resid_s = resid / (resid.std() or 1.0)
+    # absolute deviation captures both "densely stuffed" and "light-weight
+    # hub" endpoints
+    raw = pd.Series(np.abs(resid_s), index=deg[ok].index)
+    return _scoremin(raw.to_numpy(), raw.index)
 
 
 # ===========================================================================
@@ -310,20 +439,11 @@ class Fusion:
         self.explanation: Dict[str, str] = {}
         self._fuse()
 
-    def _fuse(self) -> None:
-        all_ids = set()
-        for s in self.scores.values():
-            all_ids.update(s.keys())
-        # top-2 weighted fusion: a strong catch in ONE specialized model must
-        # surface, while agreement across models adds confidence
-        agg: Dict[str, float] = {}
-        for eid in all_ids:
-            vals = sorted((s.get(eid, 0.0) for s in self.scores.values()), reverse=True)
-            if vals:
-                top1, top2 = vals[0], (vals[1] if len(vals) > 1 else 0.0)
-                agg[eid] = float(0.7 * top1 + 0.3 * top2)
+    def _finalize(self, agg: Dict[str, float]) -> None:
         total_events = self.df.groupby("entity_id").size().to_dict() if "entity_id" in self.df else {}
-        sorted_agg = sorted(agg.items(), key=lambda kv: -kv[1])
+        # deterministic tie-break: (score desc, entity_id asc) — set iteration
+        # order is hash-seed dependent and would otherwise leak into the rank
+        sorted_agg = sorted(agg.items(), key=lambda kv: (-kv[1], str(kv[0])))
         self.rank = [
             {
                 "entity_id": eid,
@@ -338,6 +458,20 @@ class Fusion:
             for eid, sc in agg.items()
             if sc > 0.6
         }
+
+    def _fuse(self) -> None:
+        all_ids = set()
+        for s in self.scores.values():
+            all_ids.update(s.keys())
+        # top-2 weighted fusion: a strong catch in ONE specialized model must
+        # surface, while agreement across models adds confidence
+        agg: Dict[str, float] = {}
+        for eid in all_ids:
+            vals = sorted((s.get(eid, 0.0) for s in self.scores.values()), reverse=True)
+            if vals:
+                top1, top2 = vals[0], (vals[1] if len(vals) > 1 else 0.0)
+                agg[eid] = float(0.7 * top1 + 0.3 * top2)
+        self._finalize(agg)
 
     def _narrate(self, eid: str, score: float) -> str:
         fired = [m for m, s in self.scores.items() if s.get(eid, 0.0) > 0.5]
@@ -364,6 +498,43 @@ def fuse_model_scores(scores: Dict[str, Dict[str, float]], df: pd.DataFrame) -> 
 
 
 # ===========================================================================
+# F — fusion candidate: Borda-count rank fusion (scale-robust aggregation)
+# ===========================================================================
+class FusionBorda(Fusion):
+    """Alternative to the top-2 weighted Fusion.
+
+    Each model casts a rank vote: the entity with the highest score in a
+    model gets (m-1) points, the lowest 0, entities the model never scored
+    get 0. Points are summed across models and normalized by the number of
+    models — so only cross-model *agreement* elevates an entity, at the cost
+    of single-model strong signals (tunable by including the max vote).
+    """
+
+    def _fuse(self) -> None:
+        models = list(self.scores.values())
+        n_models = max(len(models), 1)
+        points: Dict[str, float] = {}
+        for s in models:
+            if not s:
+                continue
+            m = len(s)
+            if m <= 1:
+                for eid in s:
+                    points[eid] = points.get(eid, 0.0)
+                continue
+            order = sorted(s, key=lambda e: (s[e], e))
+            rank = {e: i / (m - 1) for i, e in enumerate(order)}
+            for eid, r in rank.items():
+                points[eid] = points.get(eid, 0.0) + r
+        agg = {eid: min(p / n_models, 1.0) for eid, p in points.items()}
+        self._finalize(agg)
+
+
+def fuse_rank_borda(scores: Dict[str, Dict[str, float]], df: pd.DataFrame) -> FusionBorda:
+    return FusionBorda(scores, df)
+
+
+# ===========================================================================
 # dispatch used by the pipeline
 # ===========================================================================
 def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
@@ -371,9 +542,15 @@ def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
     if name == "time_correlation":
         return fit_time_correlation(df, tolerance_minutes)
     if name == "network":
+        return fit_oddball(df)
+    if name == "burst":
         return fit_network(df)
     if name == "statml":
         return fit_statml(df)
+    if name == "statml_eif":
+        return fit_statml_eif(df)
+    if name == "statml_lof":
+        return fit_statml_lof(df)
     if name == "benford":
         return fit_benford(df)
     if name == "structuring":
