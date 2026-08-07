@@ -35,12 +35,15 @@ from aml.pipeline import Pipeline  # noqa: E402
 # families: name -> list of candidate model names (run_model dispatch)
 FAMILIES = {
     "time_correlation": ["time_correlation", "time_correlation_backward",
-                         "time_correlation_anypair"],
+                         "time_correlation_anypair", "time_velocity"],
     "network": ["oddball", "oddball_signed", "burst", "degree_deviation",
-                "reciprocity"],
+                "reciprocity", "pagerank_deviation", "community_motif",
+                "scatter_gather"],
     "statml": ["statml", "statml_eif", "statml_lof", "statml_mahalanobis",
-               "statml_pca", "statml_zscore"],
-    "benford": ["benford", "benford_ks"],
+               "statml_pca", "statml_zscore", "statml_ocsvm",
+               "statml_autoencoder", "statml_hbos", "statml_gmm",
+               "statml_kde"],
+    "benford": ["benford", "benford_ks", "benford_second"],
     "structuring": ["structuring", "structuring_banded"],
     "behavioral": ["behavioral"],
 }

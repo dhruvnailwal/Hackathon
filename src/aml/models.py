@@ -1,14 +1,17 @@
-"""Model families (§2.3-2.6) over the unified dataframe.
+"""Model families (§2.3-2.6) over the unified financial dataframe.
 
-Every score function returns {entity_id: float} (higher = more anomalous).
-  C time_correlation : merge_asof cross-source colocation timing
-  D network          : OddBall egonet density/degree deviation (default);
-                        ``burst`` keeps the short-window concentration model
-  E statml           : Isolation Forest on a shared per-entity feature vector
-                        (``eif``/``lof`` variants live in the model zoo)
-  H benford          : first-digit chi-square deviation on amounts
-  H structuring      : threshold-proximity structuring rule
-  F fusion           : Borda rank fusion -> ranked insights + explanations (G)
+Every family carries * multiple candidate models * (model zoo, §2.7), and
+every score function returns {entity_id: float} (higher = more anomalous).
+  C-L decoupled families:
+   time_correlation : merge_asof cross-source colocation timing (+ variants)
+   network          : OddBall egonet / burst concentration / PageRank /
+                      community-motif deviation
+   statml           : Isolation Forest + One-Class-SVM + autoencoder + GMM
+                      + HBOS + Mahalanobis + PCA-residual on a shared vector
+   benford          : first-digit chi-square / KS / second-digit deviation
+   structuring      : threshold-proximity structuring rule (+ banded)
+   behavioral       : regime flips / burst velocity (dormancy, silence)
+  F fusion (Borda rank / top-2 / score-mean) -> unified ranked insights + exp.
 """
 from __future__ import annotations
 
@@ -19,10 +22,14 @@ import numpy as np
 import pandas as pd
 from scipy import stats as _st
 from scipy.spatial.distance import mahalanobis as _sp_mahalanobis
+from sklearn.cluster import KMeans
 from sklearn.covariance import MinCovDet
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
+from sklearn.mixture import GaussianMixture
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.neural_network import MLPRegressor
+from sklearn.svm import OneClassSVM
 
 EPS = 1e-9
 
@@ -50,7 +57,10 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     E["n_events"] = g.size().reindex(E.index).fillna(1)
 
     for et in ("call", "transaction", "post", "credit", "debit"):
-        c = rows[rows["event_type"] == et].groupby("entity_id").size()
+        if "event_type" in rows.columns:
+            c = rows[rows["event_type"] == et].groupby("entity_id").size()
+        else:
+            c = pd.Series(0, index=rows.index).groupby(rows["entity_id"]).size()
         E[et] = c.reindex(E.index).fillna(0)
 
     amt = rows[pd.to_numeric(rows.get("amount"), errors="coerce") > 0] if "amount" in rows else rows.iloc[0:0]
@@ -433,6 +443,121 @@ def fit_statml_zscore(df: pd.DataFrame) -> Dict[str, float]:
 
 
 # ===========================================================================
+# E — ML outlier candidates from the AML literature (model zoo, §2.7)
+# Schölkopf et al. 2001 (OCSVM) · Goldstein & Dengel 2012 (HBOS) ·
+# Hinton & Salakhutdinov 2006 (deep AE reconstruction) ·
+# VAE-OCSVM hybrid study 2026 (OCSVM > IF/LOF for AML prioritisation)
+# ===========================================================================
+def fit_statml_ocsvm(df: pd.DataFrame, nu: float = 0.05) -> Dict[str, float]:
+    """One-Class SVM (Schölkopf et al. 2001) on the shared feature vector.
+
+    Learns the boundary of the bulk of the population; entities far outside
+    the learned manifold (most-negative decision values) are ranked highest.
+    A 2026 East-African bank AML study found a grid-tuned OCSVM beat both
+    Isolation Forest and LOF at top-k alert prioritisation (precision 99.63%
+    in the top 5% of alerts).
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    if arr.shape[0] < 12:
+        return {}
+    clf = OneClassSVM(nu=nu, kernel="rbf", gamma="scale").fit(arr)
+    raw = -clf.decision_function(arr)  # more negative decision = more anomalous
+    return _scoremin(raw, X.index)
+
+
+def fit_statml_autoencoder(df: pd.DataFrame, hidden: tuple = (16, 8),
+                           max_iter: int = 300) -> Dict[str, float]:
+    """Deep autoencoder reconstruction error (Hinton & Salakhutdinov 2006).
+
+    A bottleneck autoencoder is trained to reconstruct the per-entity feature
+    vector; entities the net cannot squeeze through the bottleneck (large MSE)
+    carry structure the bulk population does not share — anomalous.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    if arr.shape[0] < 16:
+        return {}
+    net = MLPRegressor(hidden_layer_sizes=hidden, activation="relu",
+                       solver="adam", max_iter=max_iter, random_state=0)
+    net.fit(arr, arr)
+    recon = net.predict(arr)
+    raw = np.linalg.norm(arr - recon, axis=1)
+    return _scoremin(raw, X.index)
+
+
+def fit_statml_hbos(df: pd.DataFrame, n_bins: int = 10) -> Dict[str, float]:
+    """Histogram-based Outlier Score (Goldstein & Dengel 2012).
+
+    Per feature, bin the population; an entity that lands in a sparse bin
+    accumulates a large −log(frequency). Anomalous = rare cells across the
+    feature grid. Fast, interpretable, and competitive with LOF.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    n, d = arr.shape
+    scores = np.zeros(n)
+    for j in range(d):
+        col = arr[:, j]
+        bins = np.linspace(col.min() - EPS, col.max() + EPS, n_bins + 1)
+        hist, _ = np.histogram(col, bins=bins)
+        freq = np.maximum(hist / n, EPS)
+        idx = np.clip(np.digitize(col, bins) - 1, 0, n_bins - 1)
+        scores += -np.log(freq[idx])
+    return _scoremin(scores, X.index)
+
+
+def fit_statml_gmm(df: pd.DataFrame, n_components: int = 5) -> Dict[str, float]:
+    """Gaussian Mixture low-likelihood score.
+
+    Fits a GMM over the shared feature space; entities with the smallest
+    log-likelihood (outside every mixture component) are structural outliers.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    if arr.shape[0] < 20:
+        return {}
+    k = min(n_components, max(2, arr.shape[0] // 30))
+    try:
+        gmm = GaussianMixture(n_components=k, covariance_type="full",
+                              random_state=0, reg_covar=1e-3).fit(arr)
+        raw = -gmm.score_samples(arr)
+    except ValueError:
+        return {}
+    return _scoremin(raw, X.index)
+
+
+def fit_statml_kde(df: pd.DataFrame) -> Dict[str, float]:
+    """Kernel-density negative log-density score.
+
+    Non-parametric density estimate over the feature space; entities in the
+    tails (low density) are scored highest. Uses scipy's Gaussian KDE on the
+    standardized matrix.
+    """
+    X = _feature_matrix(df)
+    if X.empty:
+        return {}
+    arr = X.to_numpy()
+    if arr.shape[0] < 16:
+        return {}
+    from scipy.stats import gaussian_kde
+    try:
+        kde = gaussian_kde(arr.T)
+        raw = -kde.logpdf(arr.T)
+    except (np.linalg.LinAlgError, ValueError):
+        return {}
+    return _scoremin(raw, X.index)
+
+
+# ===========================================================================
 # D — network candidates (OddBall-style density/degree deviation)
 # ===========================================================================
 def fit_oddball(df: pd.DataFrame) -> Dict[str, float]:
@@ -519,6 +644,115 @@ def fit_reciprocity(df: pd.DataFrame) -> Dict[str, float]:
     for eid, v in log_both.items():
         out[eid] = min(v / float(log_both.max()), 1.0)
     return out
+
+
+def fit_pagerank_deviation(df: pd.DataFrame) -> Dict[str, float]:
+    """PageRank centrality deviation (Weber et al. 2019, AML GCN/GNN lineage).
+
+    Builds the directed money-movement graph (entity -> counterparty) and
+    computes PageRank. Entities whose PageRank is far above the expected
+    value for their degree (small-degree node that nonetheless receives a
+    huge share of the random-walk mass = a money mule sink / launderer hub)
+    are flagged.
+    """
+    try:
+        import networkx as nx
+    except ImportError:
+        return {}
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    wgt = edges.groupby(["entity_id", "counterparty_id"], sort=False).size()
+    G = nx.DiGraph()
+    G.add_nodes_from(set(edges["entity_id"]).union(edges["counterparty_id"]))
+    for (src, dst), w in wgt.items():
+        G.add_edge(str(src), str(dst), weight=max(float(w), 1e-6))
+    if G.number_of_nodes() < 4:
+        return {}
+    pr = nx.pagerank(G, weight="weight", max_iter=200)
+    # expected PageRank given degree + population average edge weight
+    n = G.number_of_nodes()
+    deg = dict(G.degree())
+    out = {}
+    deg_s = pd.Series(deg)
+    pr_s = pd.Series(pr)
+    for eid, v in pr_s.items():
+        d = 1.0 * deg_s.get(eid, 1) + 1.0
+        expected = n / (G.number_of_edges() + 1.0) * (d / n)
+        out[str(eid)] = float(max(v - expected, 0.0))
+    s = pd.Series(out)
+    if s.max() <= EPS:
+        return {}
+    return _scoremin(s.to_numpy(), s.index)
+
+
+def fit_community_motif(df: pd.DataFrame) -> Dict[str, float]:
+    """Community-size deviation (small-clique collusion).
+
+    Detects Louvain communities in the money graph; entities embedded in an
+    unusually SMALL, dense clique (a closed laundering ring / mule cell that
+    interacts mostly with each other) deviate from the giant component.
+    """
+    try:
+        import networkx as nx
+    except ImportError:
+        return {}
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    wgt = edges.groupby(["entity_id", "counterparty_id"], sort=False).size()
+    G = nx.DiGraph()
+    G.add_nodes_from(set(edges["entity_id"]).union(edges["counterparty_id"]))
+    for (src, dst), w in wgt.items():
+        G.add_edge(str(src), str(dst), weight=max(float(w), 1e-6))
+    if G.number_of_nodes() < 8:
+        return {}
+    try:
+        communities = list(nx.community.louvain_communities(G, seed=42, weight="capacity"))
+    except Exception:
+        return {}
+    comm_of = {}
+    for ci, comm in enumerate(communities):
+        for node in comm:
+            comm_of[node] = (ci, len(comm))
+    out = {}
+    for eid in set(edges["entity_id"]):
+        if str(eid) not in comm_of:
+            continue
+        size = comm_of[str(eid)][1]
+        # small cliques are the anomaly; scale so the median community is ~0
+        median_size = int(np.median([len(c) for c in communities]))
+        if size >= median_size:
+            continue
+        out[str(eid)] = min((median_size - size) / float(median_size), 1.0)
+    return out
+
+
+def fit_scatter_gather(df: pd.DataFrame) -> Dict[str, float]:
+    """Scatter-gather / mule motif density.
+
+    A launderer rings many small amounts in from many sources (gather) and
+    disperses them out to many destinations (scatter) — classic smurfing.
+    Score = product of distinct in-counterparties x distinct out-counterparties
+    normalized across the population (few accounts fanning out AND aggregating).
+    """
+    edges = df.dropna(subset=["entity_id", "counterparty_id"])
+    if edges.empty:
+        return {}
+    dir_col = df["direction"].fillna("out") if "direction" in df else pd.Series("out", index=df.index)
+    out_n = edges[dir_col.reindex(edges.index).astype(str) == "debit"].groupby("entity_id")["counterparty_id"].nunique()
+    in_n = edges[dir_col.reindex(edges.index).astype(str) == "credit"].groupby("entity_id")["counterparty_id"].nunique()
+    if out_n.empty and in_n.empty:
+        return {}
+    both = out_n.reindex(out_n.index.union(in_n.index)).fillna(0).astype(float) * \
+        in_n.reindex(out_n.index.union(in_n.index)).fillna(0).astype(float)
+    deg = edges.groupby("entity_id")["counterparty_id"].nunique().reindex(both.index).fillna(0)
+    both = both.astype(float)
+    pos = deg[deg > 0]
+    both.loc[pos.index] = both.loc[pos.index] / (pos + EPS)
+    if both.max() <= 0:
+        return {}
+    return {e: float(v / both.max()) for e, v in both.items()}
 
 
 # ===========================================================================
@@ -614,6 +848,71 @@ def fit_structuring_banded(df: pd.DataFrame, threshold: float = 10000.0,
     score = counts ** 1.2
     mx = score.max() or 1.0
     return {e: float(v / mx) for e, v in score.items()}
+
+
+def fit_benford_second(df):
+    """Benford second-digit test: the distribution of the SECOND digit is
+    noticeably flatter than the first per Benford's law; laundering data that
+    is 'cleaned' with rounded amounts collapses toward round (0,5) second
+    digits and away from the theoretical second-digit distribution."""
+    amt = df.dropna(subset=["amount"])
+    amt = amt[amt["amount"] > 0]
+    if amt.empty or len(amt) < 30:
+        return None
+    vals = amt["amount"].to_numpy(dtype=float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        first = np.floor(vals / np.power(10.0, np.floor(np.log10(vals)))).astype(int)
+        second = np.floor((vals / np.power(10.0, np.floor(np.log10(vals)) - 1)) % 10).astype(int)
+    ok = (first >= 1) & (first <= 9) & (second >= 0) & (second <= 9)
+    if ok.sum() < 20:
+        return None
+    global_count = np.bincount(second[ok], minlength=10).astype(float)
+    if global_count.sum() == 0:
+        return None
+    expected = global_count / global_count.sum()
+    out = {}
+    for eid, sub in amt.groupby("entity_id"):
+        if len(sub) < 8:
+            continue
+        v = sub["amount"].to_numpy(dtype=float)
+        # second digit = floor((x / 10^(floor(log10 x) - 1)) mod 10)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            mag = np.floor(np.log10(v))
+            second2 = np.floor((v / np.power(10.0, mag - 1)) % 10).astype(int)
+        obs = np.zeros(10)
+        for d in second2:
+            if 0 <= d <= 9:
+                obs[d] += 1
+        if obs.sum() < 8:
+            continue
+        obs = obs / obs.sum()
+        chi = float(((obs - expected) ** 2 / (expected + EPS)).sum())
+        p = float(_st.chi2.sf(chi, df=9))
+        out[eid] = min(1.0 - p, 1.0)
+    return out if out else None
+
+
+def fit_time_velocity(df: pd.DataFrame, max_span_days: float = 90.0) -> Dict[str, float]:
+    """Counterparty velocity (new-partner acquisition rate).
+
+    Money mules accumulate NEW counterparties fast (a burst of first-time
+    counterparties in a short span). Score = number of distinct counterparties
+    seen per active day, normalized across entities with comparable spans."""
+    edges = df.dropna(subset=["entity_id", "counterparty_id", "timestamp"]).copy()
+    if edges.empty:
+        return {}
+    edges["ts"] = pd.to_datetime(edges["timestamp"])
+    out = {}
+    for eid, sub in edges.groupby("entity_id"):
+        span_days = (sub["ts"].max() - sub["ts"].min()).total_seconds() / 86400.0
+        if span_days <= 0:
+            span_days = 1.0 / 24.0
+        u = sub["counterparty_id"].nunique()
+        out[eid] = u / max(span_days, EPS)
+    s = pd.Series(out)
+    if s.max() <= 0:
+        return {}
+    return _scoremin(s.to_numpy(), s.index)
 
 
 # ===========================================================================
@@ -897,6 +1196,12 @@ def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
         return fit_degree_deviation(df)
     if name == "reciprocity":
         return fit_reciprocity(df)
+    if name == "pagerank_deviation":
+        return fit_pagerank_deviation(df)
+    if name == "community_motif":
+        return fit_community_motif(df)
+    if name == "scatter_gather":
+        return fit_scatter_gather(df)
     if name == "statml":
         return fit_statml(df)
     if name == "statml_eif":
@@ -909,10 +1214,24 @@ def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
         return fit_statml_pca(df)
     if name == "statml_zscore":
         return fit_statml_zscore(df)
+    if name == "statml_ocsvm":
+        return fit_statml_ocsvm(df)
+    if name == "statml_autoencoder":
+        return fit_statml_autoencoder(df)
+    if name == "statml_hbos":
+        return fit_statml_hbos(df)
+    if name == "statml_gmm":
+        return fit_statml_gmm(df)
+    if name == "statml_kde":
+        return fit_statml_kde(df)
     if name == "benford":
         return fit_benford(df)
     if name == "benford_ks":
         return fit_benford_ks(df)
+    if name == "benford_second":
+        return fit_benford_second(df)
+    if name == "time_velocity":
+        return fit_time_velocity(df)
     if name == "structuring":
         return fit_structuring(df, threshold=structuring_threshold)
     if name == "structuring_banded":

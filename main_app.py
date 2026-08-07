@@ -1,10 +1,16 @@
-"""Anomaly Lens - minimalist PySide6 desktop dashboard.
+"""Anomaly Lens — PySide6 desktop analyst.
 
-Frosted-glass (glassmorphism) panels over a light green / light blue
-crystalline background. Runs the AML multi-model anomaly pipeline and renders:
-  1. pipeline summary stats
-  2. per-model sufficiency verdicts (SUPPORTED / DEGRADED / BLOCKED)
-  3. fused ranked insights with explanations
+A drag-and-drop window for financial / comms source files (bank CSV,
+CDR, social, JSON, JSONL, prose logs…). Press **Analyze** and every
+available model runs over the uploaded set; the colourful report opens in
+a full-window webview and is archived automatically under the user's app
+data directory (so history survives restarts *and* uninstalls).
+
+Screens:
+  Home    — drop zone + file chips + Analyze
+  Report  — QWebEngineView report preview (fits the window) + Download
+            MD / PDF + History
+  History — archived runs, open / delete
 
 Run:
     python main_app.py                  # desktop window
@@ -19,17 +25,22 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QColor, QLinearGradient, QPainter, QRadialGradient, QPixmap
+from PySide6.QtCore import Qt, QThread, QUrl, Signal
+from PySide6.QtGui import QColor, QCursor, QFont, QLinearGradient, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
+    QFileDialog,
     QFrame,
-    QGraphicsBlurEffect,
     QGraphicsDropShadowEffect,
+    QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
     QPushButton,
-    QScrollArea,
     QSizePolicy,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -43,12 +54,6 @@ TEAL = "#35c7c2"
 INK = "#1e3b33"
 MUTED = "#6b857d"
 WHITE = "#ffffff"
-
-STATUS_COLORS = {
-    "SUPPORTED": MINT,
-    "DEGRADED": "#e6a23c",
-    "BLOCKED": "#e0566b",
-}
 
 QSS = """
 QWidget#Root {
@@ -80,45 +85,49 @@ QScrollBar::add-line, QScrollBar::sub-line { height: 0; }
 #SectionTitle { font-size: 15px; font-weight: 700; color: #25483f; }
 #SectionSub   { font-size: 12px; color: #6b857d; }
 
-QPushButton#RunBtn {
+QPushButton#PrimaryBtn {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #3fbf8f, stop:1 #5aa7e8);
+              stop:0 #3fbf8f, stop:1 #5aa7e8);
     color: white; border: none; border-radius: 14px;
-    font-weight: 700; padding: 10px 22px; font-size: 13px;
+    font-weight: 700; padding: 10px 24px; font-size: 13px;
 }
-QPushButton#RunBtn:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #4fd0a2, stop:1 #6cb8f2); }
-QPushButton#RunBtn:pressed { background: #2eae83; }
+QPushButton#PrimaryBtn:hover { background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+              stop:0 #4fd0a2, stop:1 #6cb8f2); }
+QPushButton#PrimaryBtn:disabled { background: #9fb8ae; }
 
-#SrcChip {
+QPushButton#GhostBtn {
     background: rgba(255,255,255,0.55);
-    border: 1px solid rgba(255,255,255,0.75);
-    border-radius: 12px;
-    color: #2a4a41; font-weight: 600; font-size: 12px; padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.8); border-radius: 14px;
+    color: #2a4a41; font-weight: 700; padding: 10px 20px; font-size: 13px;
 }
+QPushButton#GhostBtn:hover { background: rgba(255,255,255,0.8); }
+
+#DropZone {
+    background: rgba(255, 255, 255, 0.30);
+    border: 2px dashed #8fb8c2;
+    border-radius: 22px;
+}
+#DropZone[drag="true"] { background: rgba(63, 191, 143, 0.10);
+                         border-color: #3fbf8f; }
+#DropHint { font-size: 17px; font-weight: 700; color: #2a4a41; }
+#DropSub  { font-size: 12px; color: #6b857d; }
+
+#SrcChip { background: rgba(255,255,255,0.55);
+           border: 1px solid rgba(255,255,255,0.75); border-radius: 12px;
+           color: #2a4a41; font-weight: 600; font-size: 12px; padding: 6px 12px; }
 
 #StatValue { font-size: 26px; font-weight: 800; color: #1e3b33; }
 #StatLabel { font-size: 11px; color: #6b857d; font-weight: 600; }
 
-#StatusChip { color: white; font-weight: 800; font-size: 10px;
-              padding: 3px 10px; border-radius: 9px; }
-#VerdictModel { font-weight: 700; font-size: 13px; color: #25483f; }
-#VerdictReason { font-size: 12px; color: #5f7a72; }
-
-#RankGem { color: rgba(255,255,255,235); font-size: 20px; font-weight: 800;
-           border-radius: 18px; }
-#CardEntity { font-size: 20px; font-weight: 800; color: #1c3a31; }
-#CardMeta   { font-size: 11px; color: #6b857d; }
-#CardScore  { font-size: 26px; font-weight: 800; }
-#ModelChip { background: rgba(63,191,143,40); border: 1px solid rgba(63,191,143,90);
-             border-radius: 10px; color: #26785b; font-size: 10px; font-weight: 700;
-             padding: 3px 9px; }
-#Explain   { font-size: 12px; color: #3d5a51; }
+#WebBar { background: rgba(255,255,255,0.55); border: none; border-radius: 0;
+          border-bottom: 1px solid rgba(255,255,255,0.9); }
 """
 
 
+# ---------------------------------------------------------------------------
+# pipeline runner (off the UI thread)
+# ---------------------------------------------------------------------------
 class PipelineRunner(QThread):
-    """Run the anomaly pipeline off the UI thread."""
     done = Signal(object)
 
     def __init__(self, paths, parent=None):
@@ -127,41 +136,16 @@ class PipelineRunner(QThread):
 
     def run(self):
         from aml.pipeline import Pipeline
-        self.done.emit(Pipeline().run(self.paths, with_models=True))
+        try:
+            res = Pipeline().run(self.paths, with_models=True)
+        except Exception as exc:  # surface load errors instead of dying silently
+            res = exc
+        self.done.emit(res)
 
 
-class FrostBlob(QLabel):
-    """A soft radial colour blob that fakes out-of-focus background depth."""
-
-    def __init__(self, color, size, alpha, parent=None):
-        super().__init__(parent)
-        pix = QPixmap(size, size)
-        pix.fill(Qt.transparent)
-        p = QPainter(pix)
-        p.setRenderHint(QPainter.Antialiasing)
-        grad = QRadialGradient(size / 2, size / 2, size / 2)
-        grad.setColorAt(0.0, QColor(color))
-        grad.setColorAt(1.0, QColor(color))
-        col = QColor(color)
-        col.setAlpha(alpha)
-        grad.setColorAt(0.0, col)
-        col2 = QColor(color)
-        col2.setAlpha(0)
-        grad.setColorAt(1.0, col2)
-        p.setBrush(grad)
-        p.setPen(Qt.NoPen)
-        p.drawEllipse(0, 0, size, size)
-        p.end()
-        self.setPixmap(pix)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-
-def make_blur_effect(widget, radius=40):
-    eff = QGraphicsBlurEffect(widget)
-    eff.setBlurRadius(radius)
-    widget.setGraphicsEffect(eff)
-
-
+# ---------------------------------------------------------------------------
+# shared chrome
+# ---------------------------------------------------------------------------
 def make_shadow(widget, blur=26, dy=8, alpha=50):
     sh = QGraphicsDropShadowEffect(widget)
     sh.setBlurRadius(blur)
@@ -170,272 +154,407 @@ def make_shadow(widget, blur=26, dy=8, alpha=50):
     widget.setGraphicsEffect(sh)
 
 
-class Glass(QFrame):
-    """A frosted glass panel: translucent white with a white hairline edge."""
+def header_row(window) -> QFrame:
+    bar = QFrame()
+    bar.setObjectName("GlassPanelStrong")
+    lay = QHBoxLayout(bar)
+    lay.setContentsMargins(22, 14, 22, 14)
+    lay.setSpacing(10)
+    brand = QLabel("Anomaly Lens")
+    brand.setObjectName("Brand")
+    lay.addWidget(brand)
+    rot = QLabel("multi-source anomaly detection · drag-and-drop analyst")
+    rot.setObjectName("Tag")
+    lay.addWidget(rot, 1)
+    return bar
 
-    def __init__(self, strong=False, radius=22, parent=None):
+
+def make_striped_table(rows):  # helper kept for screenshots / plain views
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# drop zone
+# ---------------------------------------------------------------------------
+class DropZone(QFrame):
+    dropped = Signal(object)
+
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("GlassPanelStrong" if strong else "GlassPanel")
-        self._radius = radius
-        self.setStyleSheet(self.styleSheet())
+        self.setObjectName("DropZone")
+        self.setProperty("drag", False)
+        self.setAcceptDrops(True)
+        self.setMinimumHeight(220)
 
-    def setContent(self, widget):
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(22, 20, 22, 20)
-        lay.setSpacing(14)
-        lay.addWidget(widget)
+        lay.setAlignment(Qt.AlignCenter)
+        lay.setSpacing(6)
+        t = QLabel("Drag & drop source files here")
+        t.setObjectName("DropHint")
+        t.setAlignment(Qt.AlignCenter)
+        sub = QLabel("CSV · TSV · JSON · JSONL · TXT · LOG — bank, CDR, social, prose")
+        sub.setObjectName("DropSub")
+        sub.setAlignment(Qt.AlignCenter)
+        lay.addWidget(t)
+        lay.addWidget(sub)
+        self.tip = sub
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+            self.setProperty("drag", True)
+            self.style().unpolish(self)
+            self.style().polish(self)
+
+    def dragLeaveEvent(self, event):
+        self.setProperty("drag", False)
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def dropEvent(self, event):
+        from aml.loaders import is_supported
+        self.setProperty("drag", False)
+        urls = [u.toLocalFile() for u in event.mimeData().urls() if u.isLocalFile()]
+        ok = [p for p in urls if is_supported(p)]
+        if not ok:
+            QMessageBox.information(self, "Anomaly Lens",
+                                    "None of the dropped files have a supported "
+                                    "extension (CSV/TSV/JSON/TXT/LOG).")
+            return
+        self.dropped.emit(ok)
 
 
-def section_title(text, sub=""):
-    box = QWidget()
-    lay = QVBoxLayout(box)
-    lay.setContentsMargins(0, 0, 0, 0)
-    lay.setSpacing(2)
-    t = QLabel(text)
-    t.setObjectName("SectionTitle")
-    lay.addWidget(t)
-    if sub:
-        s = QLabel(sub)
-        s.setObjectName("SectionSub")
-        lay.addWidget(s)
-    return box
+# ---------------------------------------------------------------------------
+# home page
+# ---------------------------------------------------------------------------
+class HomePage(QWidget):
+    """Empty state: no hardcoded demo numbers — files appear only after the user drops them."""
+    analyze_clicked = Signal(object)
+    history_requested = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.files: list = []
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(40, 24, 40, 30)
+        lay.setSpacing(20)
+        lay.addWidget(header_row(self))
+
+        self._files: list = []
+
+        self.drop = DropZone(self)
+        self.drop.dropped.connect(self._add_files)
+        lay.addWidget(self.drop, 1)
+
+        self.chip_row = QWidget(self)
+        self.chip_lay = QHBoxLayout(self.chip_row)
+        self.chip_lay.setContentsMargins(0, 0, 0, 0)
+        self.chip_lay.setSpacing(8)
+        self.chip_lay.addStretch(1)
+        lay.addWidget(self.chip_row)
+
+        actions = QHBoxLayout()
+        actions.setSpacing(10)
+        self.btn_history = QPushButton("History")
+        self.btn_history.setObjectName("GhostBtn")
+        self.btn_history.clicked.connect(self.history_requested)
+        actions.addWidget(self.btn_history)
+        self.btn_browse = QPushButton("Browse files…")
+        self.btn_browse.setObjectName("GhostBtn")
+        self.btn_browse.clicked.connect(self._browse)
+        actions.addWidget(self.btn_browse)
+        self.btn_analyze = QPushButton("Analyze")
+        self.btn_analyze.setObjectName("PrimaryBtn")
+        self.btn_analyze.setEnabled(False)
+        self.btn_analyze.clicked.connect(lambda: self.analyze_clicked.emit(list(self._files)))
+        actions.addWidget(self.btn_analyze)
+        actions.addStretch(1)
+        lay.addLayout(actions)
+
+        self.status = QLabel("No files loaded yet — drop or browse to begin.")
+        self.status.setObjectName("Tag")
+        lay.addWidget(self.status)
+
+    def dropzone(self):
+        return self
+
+    def _add_files(self, paths):
+        from aml.loaders import collect_files
+        self._files = collect_files(list(self._files) + list(paths))
+        self._render_chips()
+        self.btn_analyze.setEnabled(len(self._files) > 0)
+        self.status.setText(f"{len(self._files)} file(s) ready to analyze.")
+
+    def _browse(self):
+        from aml.loaders import SUPPORTED_EXTENSIONS
+        flt = "Data files (" + " ".join(f"*{e}" for e in SUPPORTED_EXTENSIONS) + ")"
+        paths, _ = QFileDialog.getOpenFileNames(self, "Open source files", "", flt)
+        if paths:
+            self._add_files(paths)
+
+    def _render_chips(self):
+        while self.chip_lay.count():
+            it = self.chip_lay.takeAt(0)
+            w = it.widget()
+            if w:
+                w.deleteLater()
+        self.chip_lay.addStretch(1)
+        for p in self._files[:8]:
+            chip = QLabel(Path(p).name)
+            chip.setObjectName("SrcChip")
+            chip.setToolTip(p)
+            self.chip_lay.addWidget(chip)
+        if len(self._files) > 8:
+            more = QLabel(f"+{len(self._files) - 8}")
+            more.setObjectName("SrcChip")
+            self.chip_lay.addWidget(more)
+        self.chip_lay.addStretch(1)
 
 
-def make_source_chips(per_source):
-    row = QWidget()
-    from PySide6.QtWidgets import QHBoxLayout
-    lay = QHBoxLayout(row)
-    lay.setContentsMargins(0, 0, 0, 0)
-    lay.setSpacing(8)
-    for rs in per_source:
-        chip = QLabel(f"{rs.source.upper()}  {rs.n_rows:,}")
-        chip.setObjectName("SrcChip")
-        lay.addWidget(chip)
-    return row
+# ---------------------------------------------------------------------------
+# history dialog
+# ---------------------------------------------------------------------------
+class HistoryDialog(QDialog):
+    def __init__(self, runs, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Anomaly Lens — History")
+        self.resize(680, 460)
+        self.runs = runs
+        lay = QVBoxLayout(self)
+        title = QLabel("Previous analyses")
+        title.setObjectName("SectionTitle")
+        lay.addWidget(title)
+        self.listw = QListWidget(self)
+        for r in runs:
+            summ = r.get("summary", {})
+            top = r.get("top_insight")
+            line = (f"{r.get('created_at', r.get('run_id', ''))}  "
+                    f"{summ.get('events', 0):,} events · "
+                    f"{summ.get('entities', 0):,} entities · "
+                    f"{summ.get('sources', 0)} sources · "
+                    f"top: {top or '-'} ({r.get('top_score', '-')})")
+            item = QListWidgetItem(line)
+            item.setData(Qt.UserRole, r.get("run_id"))
+            self.listw.addItem(item)
+        lay.addWidget(self.listw, 1)
+        btns = QHBoxLayout()
+        self.btn_open = QPushButton("Open selected")
+        self.btn_delete = QPushButton("Delete")
+        self.btn_cancel = QPushButton("Close")
+        for b in (self.btn_open, self.btn_delete, self.btn_cancel):
+            b.setObjectName("GhostBtn")
+        self.btn_open.setObjectName("PrimaryBtn")
+        self.btn_open.clicked.connect(self.accept)
+        self.btn_delete.clicked.connect(self._delete)
+        self.btn_cancel.clicked.connect(self.reject)
+        btns.addWidget(self.btn_open)
+        btns.addWidget(self.btn_delete)
+        btns.addStretch(1)
+        btns.addWidget(self.btn_cancel)
+        lay.addLayout(btns)
+
+    def selected_run_id(self):
+        it = self.listw.currentItem()
+        return it.data(Qt.UserRole) if it else None
+
+    def rerun_list(self):
+        return self.runs
+
+    def _delete(self):
+        rid = self.selected_run_id()
+        if rid:
+            from aml import storage
+            storage.delete_run(rid)
+            self.runs = storage.list_runs()
+            self.listw.clear()
+            for r in self.runs:
+                summ = r.get("summary", {})
+                line = (f"{r.get('created_at', r.get('run_id', ''))}  "
+                        f"{summ.get('events', 0):,} events · "
+                        f"{summ.get('entities', 0):,} entities · "
+                        f"{summ.get('sources', 0)} sources")
+                item = QListWidgetItem(line)
+                item.setData(Qt.UserRole, r.get("run_id"))
+                self.listw.addItem(item)
 
 
-def make_stat(label, value):
-    box = QFrame()
-    box.setObjectName("GlassPanel")
-    lay = QVBoxLayout(box)
-    lay.setContentsMargins(16, 12, 16, 12)
-    v = QLabel(str(value))
-    v.setObjectName("StatValue")
-    l = QLabel(label)
-    l.setObjectName("StatLabel")
-    lay.addWidget(v)
-    lay.addWidget(l)
-    make_shadow(box, 18, 4, 40)
-    return box
+# ---------------------------------------------------------------------------
+# report viewer (webview fills the window)
+# ---------------------------------------------------------------------------
+class ReportView(QWidget):
+    """Shows the generated report HTML in a webview that tracks the window."""
+    home_requested = Signal()
+    history_requested = Signal()
+    export_requested = Signal(str)  # "md" | "pdf"
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+
+        bar = QFrame()
+        bar.setObjectName("GlassPanelStrong")
+        blay = QHBoxLayout(bar)
+        blay.setContentsMargins(18, 10, 18, 10)
+        blay.setSpacing(8)
+        title = QLabel("Analysis report")
+        title.setObjectName("SectionTitle")
+        blay.addWidget(title)
+        blay.addStretch(1)
+        md = QPushButton("Download MD")
+        pdf = QPushButton("Download PDF")
+        hist = QPushButton("History")
+        home = QPushButton("← Home")
+        for b in (md, pdf, hist, home):
+            b.setObjectName("GhostBtn")
+        md.clicked.connect(lambda: self.export_requested.emit("md"))
+        pdf.clicked.connect(lambda: self.export_requested.emit("pdf"))
+        hist.clicked.connect(self.history_requested)
+        home.clicked.connect(self.home_requested)
+        blay.addWidget(md)
+        blay.addWidget(pdf)
+        blay.addWidget(hist)
+        blay.addWidget(home)
+        lay.addWidget(bar)
+
+        self.web = self._make_webview()
+        # 1 = stretch — the webview always fills the available window size
+        lay.addWidget(self.web, 1)
+
+    def _make_webview(self):
+        try:
+            from PySide6.QtWebEngineWidgets import QWebEngineView
+            web = QWebEngineView(self)
+        except ImportError:  # QtWebEngine not bundled — degrade to a label
+            web = QLabel("QtWebEngine is not installed; open report.md / report.html manually.")
+            web.setObjectName("DropSub")
+            return web
+        web.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        return web
+
+    def show_html(self, html_path: str):
+        self._html_path = html_path
+        if hasattr(self.web, "load"):
+            self.web.load(QUrl.fromLocalFile(html_path))
+        else:
+            self.web.setText(f"report saved at: {html_path}")
+
+    def current_file(self, kind: str):
+        return getattr(self, "_html_path", None)
 
 
-def make_verdict_row(model, status, reason):
-    row = QWidget()
-    from PySide6.QtWidgets import QHBoxLayout
-    lay = QHBoxLayout(row)
-    lay.setContentsMargins(0, 2, 0, 2)
-    lay.setSpacing(12)
-    m = QLabel(model)
-    m.setObjectName("VerdictModel")
-    m.setMinimumWidth(190)
-    lay.addWidget(m)
-    chip = QLabel(status)
-    chip.setObjectName("StatusChip")
-    chip.setStyleSheet(f"#StatusChip {{ background: {STATUS_COLORS.get(status, MUTED)}; }}")
-    lay.addWidget(chip)
-    r = QLabel(reason)
-    r.setObjectName("VerdictReason")
-    r.setWordWrap(True)
-    lay.addWidget(r, 1)
-    return row
-
-
-def make_insight_card(rank, item):
-    """A crystallised ranked-insight card."""
-    from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
-    card = QFrame()
-    card.setObjectName("GlassPanelStrong")
-    make_shadow(card, 22, 6, 46)
-    lay = QHBoxLayout(card)
-    lay.setContentsMargins(18, 16, 18, 16)
-    lay.setSpacing(18)
-
-    # rank gem (crystal facet)
-    gem = QLabel(f"{rank}")
-    gem.setObjectName("RankGem")
-    gem.setFixedSize(38, 38)
-    gem.setAlignment(Qt.AlignCenter)
-    gem.setStyleSheet(
-        f"#RankGem {{ background: qlineargradient(x1:0,y1:0,x2:1,y2:1,"
-        f"stop:0 {MINT}, stop:1 {SKY}); }}"
-    )
-    lay.addWidget(gem)
-
-    # middle: entity + meta + explanation
-    mid = QWidget()
-    v = QVBoxLayout(mid)
-    v.setContentsMargins(0, 0, 0, 0)
-    v.setSpacing(4)
-    e = QLabel(item.get("entity_id", ""))
-    e.setObjectName("CardEntity")
-    v.addWidget(e)
-    meta = QLabel(f"{item.get('n_events', 0):,} events   models: "
-                  + ", ".join(item.get("models_fired", [])))
-    meta.setObjectName("CardMeta")
-    v.addWidget(meta)
-    expl = QLabel(item.get("explanation", ""))
-    expl.setObjectName("Explain")
-    expl.setWordWrap(True)
-    v.addWidget(expl)
-    lay.addWidget(mid, 1)
-
-    # right: score
-    score = QLabel(f"{item.get('score', 0):.2f}")
-    score.setObjectName("CardScore")
-    score.setStyleSheet(f"#CardScore {{ color: {TEAL}; }}")
-    score.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-    lay.addWidget(score)
-    return card
-
-
-def build_dashboard(result, window=None):
-    """Lay out every section from a PipelineResult."""
-    from PySide6.QtWidgets import QHBoxLayout, QGridLayout
-
-    body = QVBoxLayout()
-    body.setSpacing(18)
-
-    # ---- header ----------------------------------------------------------
-    head = QHBoxLayout()
-    brand = QVBoxLayout()
-    t = QLabel("Anomaly Lens")
-    t.setObjectName("Brand")
-    tag = QLabel("multi-source anomaly detection · bank + CDR + social")
-    tag.setObjectName("Tag")
-    brand.addWidget(t)
-    brand.addWidget(tag)
-    head.addLayout(brand, 1)
-    head.addWidget(make_source_chips(result.per_source))
-    btn = QPushButton("Run analysis")
-    btn.setObjectName("RunBtn")
-    head.addWidget(btn)
-    body.addLayout(head)
-
-    # ---- stats -------------------------------------------------------------
-    unified = result.unified
-    n_entities = unified["entity_id"].nunique() if not unified.empty else 0
-    n_cross = getattr(result.entity_map, "n_cross_source", 0)
-    blocked = sum(1 for v in result.sufficiency.values() if v.status == "BLOCKED")
-    stats = QHBoxLayout()
-    stats.setSpacing(14)
-    stats.addWidget(make_stat("events", len(unified)))
-    stats.addWidget(make_stat("entities", n_entities))
-    stats.addWidget(make_stat("sources", len(result.per_source)))
-    stats.addWidget(make_stat("cross-source links", n_cross))
-    stats.addWidget(make_stat("blocked models", blocked))
-    stats.addStretch(1)
-    body.addLayout(stats)
-
-    # ---- sufficiency ---------------------------------------------------------
-    suff = Glass(strong=True)
-    sv = suff.layout() if suff.layout() else QVBoxLayout(suff)
-    sv.setContentsMargins(22, 18, 22, 18)
-    sv.setSpacing(8)
-    sv.addWidget(section_title("Data sufficiency",
-                               "per-model verdict — the pipeline only runs what the data supports"))
-    for v in result.sufficiency.values():
-        sv.addWidget(make_verdict_row(v.model, v.status, v.reason))
-    body.addWidget(suff)
-
-    # ---- ranked insights ----------------------------------------------------
-    ins = QVBoxLayout()
-    ins.setSpacing(14)
-    ins.addWidget(section_title("Ranked insights",
-                                "fused across models — highest risk first"))
-    expl = result.explanations
-    for i, item in enumerate(result.rankings[:10], 1):
-        item = dict(item)
-        item["explanation"] = expl.get(item["entity_id"], "")
-        ins.addWidget(make_insight_card(i, item))
-    body.addLayout(ins)
-    body.addStretch(1)
-
-    # wire re-run button
-    from PySide6.QtCore import QObject
-    btn.clicked.connect(lambda: _rerun(btn, result, window))
-    return body
-
-
-def _sources_dir() -> str:
-    from aml.config import PipelineConfig
-    from aml.loaders import collect_files
-    cfg = PipelineConfig.from_yaml(str(ROOT / "config" / "config.yaml"))
-    return collect_files([str(ROOT / (cfg.sources_dir or "data/sources"))])
-
-
-def _rerun(btn, result, window=None):
-    paths = _sources_dir()
-    btn.setEnabled(False)
-    btn.setText("running…")
-    th = PipelineRunner(paths, btn)
-    _RERUN_THREADS.append(th)
-    th.done.connect(lambda res: _apply_refresh(res, btn, window))
-    th.start()
-
-
-_RERUN_THREADS = []
-
-
-def _apply_refresh(res, btn, window=None):
-    from PySide6.QtWidgets import QMessageBox
-    btn.setText("Run analysis")
-    btn.setEnabled(True)
-    if window is not None and hasattr(window, "populate"):
-        window.populate(res)
-    else:
-        QMessageBox.information(btn, "Anomaly Lens", "Analysis finished.")
-
-
+# ---------------------------------------------------------------------------
+# main window
+# ---------------------------------------------------------------------------
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Anomaly Lens")
-        self.resize(1120, 780)
-        self.setObjectName("Root")
+        self.resize(1180, 800)
+        self.setObjectName("root")
 
-        # background frost blobs
-        b1 = FrostBlob(MINT, 460, 60, self)
-        b1.move(-120, -120)
-        make_blur_effect(b1)
-        b2 = FrostBlob(SKY, 520, 55, self)
-        b2.move(760, 420)
-        make_blur_effect(b2)
-        b3 = FrostBlob("#bfe3d3", 320, 80, self)
-        b3.move(900, 0)
-        make_blur_effect(b3)
-
-        self.scroll = QScrollArea(self)
-        self.scroll.setWidgetResizable(True)
-        self.content = QWidget()
-        self.content.setObjectName("ScrollContent")
-        self.body = QVBoxLayout(self.content)
-        self.body.setContentsMargins(28, 22, 28, 30)
-        self.scroll.setWidget(self.content)
+        self.storage = None
+        self._current_report: dict | None = None
         self.root_lay = QVBoxLayout(self)
         self.root_lay.setContentsMargins(0, 0, 0, 0)
-        self.root_lay.addWidget(self.scroll)
+        self.stack = QStackedWidget(self)
+        self.home = HomePage(self)
+        self.report = ReportView(self)
+        self.stack.addWidget(self.home)
+        self.stack.addWidget(self.report)
+        self.root_lay.addWidget(self.stack, 1)
+
+        self.home.analyze_clicked.connect(self._analyze_files)
+        self.home.history_requested.connect(self._open_history)
+        self.report.home_requested.connect(lambda: self.stack.setCurrentIndex(0))
+        self.report.history_requested.connect(self._open_history)
+        self.report.export_requested.connect(self._export)
+
+    # -- actions -----------------------------------------------------------
+    def _analyze_files(self, paths):
+        self._last_files = list(paths)
+        self.home.btn_analyze.setEnabled(False)
+        self.home.btn_analyze.setText("Analyzing…")
+        th = PipelineRunner(paths, self)
+        self._th = th
+        th.done.connect(self._rendered)
+        th.start()
+
+    def _rendered(self, result):
+        self.home.btn_analyze.setEnabled(True)
+        self.home.btn_analyze.setText("Analyze")
+        if isinstance(result, Exception):
+            QMessageBox.critical(self, "Anomaly Lens", f"Analysis failed:\n{result}")
+            return
+        self._show_result(result)
+
+    def _show_result(self, result):
+        from aml.config import PipelineConfig
+        from aml import storage
+        cfg = PipelineConfig.from_yaml(str(ROOT / "config" / "config.yaml"))
+        paths = getattr(self, "_last_files", None) or []
+        meta = storage.save_run(result, cfg, paths, label="desktop")
+        self._open_run(meta["run_id"])
+
+    @property
+    def dropzone(self):
+        return self.home
 
     def populate(self, result):
-        # clear placeholders and add the dashboard
-        while self.body.count():
-            it = self.body.takeAt(0)
-            w = it.widget()
-            if w:
-                w.deleteLater()
-        self.body.addLayout(build_dashboard(result, self))
-        self.content.setStyleSheet(
-            "QWidget#ScrollContent { background: transparent; }"
-        )
+        """API kept for tests / programmatic re-population."""
+        self._show_result(result)
+
+    def _open_run(self, run_id):
+        from aml import storage
+        meta = storage.load_run(run_id)
+        if not meta:
+            QMessageBox.warning(self, "Anomaly Lens", f"Run {run_id} not found.")
+            return
+        html = meta.get("files", {}).get("html")
+        if html and Path(html).exists():
+            self.report.show_html(html)
+        else:
+            self.report.web.setText(f"report missing for run {run_id}")
+        self.stack.setCurrentWidget(self.report)
+
+    def _open_history(self):
+        from aml import storage
+        runs = storage.list_runs()
+        dlg = HistoryDialog(runs, self)
+        if dlg.exec() == QDialog.Accepted:
+            rid = dlg.selected_run_id()
+            if rid:
+                self._open_run(rid)
+
+    def _export(self, kind):
+        html = self.report.current_file("html")
+        if not html:
+            return
+        run_dir = Path(html).parent
+        src = run_dir / ("report.md" if kind == "md" else "report.pdf")
+        if not src.exists():
+            QMessageBox.warning(self, "Anomaly Lens", f"{src.name} not available.")
+            return
+        out, _ = QFileDialog.getSaveFileName(self, f"Save {kind.upper()}",
+                                             str(ROOT / f"anomaly_report.{kind}"),
+                                             f"{kind.upper()} files (*.{kind})")
+        if out:
+            from shutil import copyfile
+            copyfile(src, out)
+            QMessageBox.information(self, "Anomaly Lens", f"Saved to\n{out}")
+
+
+def _apply_refresh(result, btn, window=None):
+    """Compat helper used by the tests: reset the button and (re)populate
+    the window with the finished pipeline result."""
+    from PySide6.QtWidgets import QMessageBox
+    btn.setText("Analyze")
+    btn.setEnabled(True)
+    if window is not None and hasattr(window, "populate"):
+        window.populate(result)
+    else:
+        QMessageBox.information(btn, "Anomaly Lens", "Analysis finished.")
 
 
 def main() -> int:
@@ -447,21 +566,33 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
 
-    # run pipeline
-    paths = _sources_dir()
-    from aml.pipeline import Pipeline
-    result = Pipeline().run(paths, with_models=True)
-
     win = MainWindow()
-    win.resize(1120, 780)
-    win.populate(result)
     win.show()
 
     if args.shot:
+        # offline smoke: analyze the shipped sample set and capture the report view
+        from aml.loaders import collect_files
+        from aml.config import PipelineConfig
+        from aml import storage
+        from aml.pipeline import Pipeline
+        import time
+        cfg = PipelineConfig.from_yaml(str(ROOT / "config" / "config.yaml"))
+        paths = collect_files([str(ROOT / (cfg.sources_dir or "data/sources"))])
+        res = Pipeline().run(paths, with_models=True)
+        meta = storage.save_run(res, cfg, paths, label="ui-screenshot")
+        win._open_run(meta["run_id"])
+        win.resize(1120, 780)
+        win.show()
+        # give the webview a moment to paint the report before grabbing
+        for _ in range(120):
+            app.processEvents()
+            time.sleep(0.05)
         out = ROOT / args.shot
         win.grab().save(str(out))
         print("saved", out)
+        storage.delete_run(meta["run_id"])
         return 0
+    win.show()
     return app.exec()
 
 

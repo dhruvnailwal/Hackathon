@@ -53,9 +53,36 @@ def test_report_generation(synthetic_dir, tmp_path):
     cfg = PipelineConfig()
     written = generate_report(res, cfg, tmp_path)
     md = (tmp_path / "report.md").read_text(encoding="utf-8")
-    assert "Ranked insights" in md
-    assert "Models auto-activated" in md
+    assert "What we found about your data" in md
+    assert "The people who stand out" in md
+    assert "Where the records came from" in md
+    assert "When it happened" in md
+    # the human report must not expose jargon/scores
+    assert "model" not in md.lower()
     assert (tmp_path / "report.json").exists()
+    assert (tmp_path / "report.html").exists()
+    assert (tmp_path / "report.pdf").exists()
+    assert (tmp_path / "report.html").read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
+    assert list(written) == ["markdown", "html", "pdf", "json"]
+    charts = list((tmp_path / "charts").glob("*.png"))
+    assert len(charts) == 3, f"expected 3 charts, got {len(charts)}"
+    from pypdf import PdfReader
+    pdf = PdfReader(str(tmp_path / "report.pdf"))
+    assert len(pdf.pages) >= 1
+
+
+def test_report_generation_empty_input(tmp_path):
+    """Report renders on empty runs (no sources) without crashing."""
+    from aml.config import PipelineConfig
+    res = Pipeline().run([], with_models=True)
+    written = generate_report(res, PipelineConfig(), tmp_path)
+    md = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert ("Nobody stood out" in md
+            or "No timestamped records" in md
+            or "Where the records came from" in md)
+    assert (tmp_path / "report.pdf").exists()
+    from pypdf import PdfReader
+    assert len(PdfReader(str(tmp_path / "report.pdf")).pages) >= 1
 
 
 def test_pipeline_empty_paths_does_not_crash():

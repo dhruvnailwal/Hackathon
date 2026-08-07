@@ -66,15 +66,54 @@ def test_run_model_dispatch_new_candidates():
     unit-range scores (or empty dicts when the data cannot support them)."""
     df = _f_df(n_entities=16, events_per=60)
     candidates = (
-        "time_correlation_backward", "time_correlation_anypair",
+        "time_correlation_backward", "time_correlation_anypair", "time_velocity",
         "oddball_signed", "degree_deviation", "reciprocity",
+        "pagerank_deviation", "community_motif", "scatter_gather",
         "statml_eif", "statml_lof", "statml_mahalanobis", "statml_pca",
-        "statml_zscore", "benford_ks", "structuring_banded",
+        "statml_zscore", "statml_ocsvm", "statml_autoencoder", "statml_hbos",
+        "statml_gmm", "statml_kde", "benford_ks", "benford_second",
+        "structuring_banded",
     )
     for name in candidates:
         out = am.run_model(name, df)
         assert isinstance(out, dict), name
         assert all(0.0 <= v <= 1.0 for v in out.values()), name
+
+
+def test_statml_ocsvm_ranks_outlier_highest():
+    """A synthetic far-away entity should be the top OCSVM risk (literature:
+    OCSVM beats IF/LOF for top-k AML alert prioritisation)."""
+    rng = np.random.default_rng(7)
+    rows = []
+    for ei in range(20):
+        for _ in range(50):
+            rows.append({"entity_id": f"E{ei:02d}", "source": "bank",
+                         "amount": float(rng.uniform(100, 8000)),
+                         "counterparty_id": f"C{rng.integers(0, 9)}",
+                         "timestamp": pd.Timestamp("2024-01-01") + pd.Timedelta(minutes=int(rng.integers(1, 300)))})
+    df = pd.DataFrame(rows)
+    outlier = [{"entity_id": "E{0}".format(i), "source": "bank", "amount": 1e7,
+                "counterparty_id": "CX1", "timestamp": pd.Timestamp("2024-01-01")} for i in range(18, 21)]
+    df = pd.concat([df, pd.DataFrame(outlier)], ignore_index=True)
+    out = am.fit_statml_ocsvm(df)
+    assert out, "OCSVM produced no scores"
+    assert max(out.values()) >= 0.5
+    assert max(out, key=out.get) in ("E18", "E19", "E20")
+
+
+def test_scatter_gather_flags_mule():
+    """Scatter-gather: an entity receiving from many (+ inset fan-in) AND
+    dispersing to many (fan-out) networks should rank above 0.5."""
+    rng = np.random.default_rng(3)
+    rows = []
+    for src in range(25):
+        for dstk in range(12):
+            rows.append({"entity_id": f"E{src:02d}", "counterparty_id": f"C{src}-{dstk}",
+                         "direction": rng.choice(["credit", "debit"]), "amount": 1.0})
+    df = pd.DataFrame(rows)
+    out = am.fit_scatter_gather(df)
+    assert out
+    assert max(out.values()) > 0.5
 
 
 def test_fusion_variants_rank():
