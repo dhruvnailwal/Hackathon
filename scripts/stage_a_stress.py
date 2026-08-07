@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import shutil
 import sys
 import tempfile
@@ -182,35 +183,35 @@ def _write_csv(path: Path, header: List[str], rows: List[dict], delim: str) -> P
     return path
 
 
-def _f_csv_comma(p, h, rows):
+def _f_csv_comma(p, h, rows, attrs=None):
     return _write_csv(p.with_suffix(".csv"), h, rows, ",")
 
 
-def _f_csv_tsv(p, h, rows):
+def _f_csv_tsv(p, h, rows, attrs=None):
     return _write_csv(p.with_suffix(".tsv"), h, rows, "\t")
 
 
-def _f_csv_semi(p, h, rows):
+def _f_csv_semi(p, h, rows, attrs=None):
     return _write_csv(p.with_suffix(".csv"), h, rows, ";")
 
 
-def _f_csv_pipe(p, h, rows):
+def _f_csv_pipe(p, h, rows, attrs=None):
     return _write_csv(p.with_suffix(".csv"), h, rows, "|")
 
 
-def _f_json(p, h, rows):
+def _f_json(p, h, rows, attrs=None):
     path = p.with_suffix(".json")
     path.write_text(json.dumps(rows, default=str), encoding="utf-8")
     return path
 
 
-def _f_jsonl(p, h, rows):
+def _f_jsonl(p, h, rows, attrs=None):
     path = p.with_suffix(".jsonl")
     path.write_text("\n".join(json.dumps(r, default=str) for r in rows) + "\n", encoding="utf-8")
     return path
 
 
-def _f_txt_tab(p, h, rows):
+def _f_txt_tab(p, h, rows, attrs=None):
     path = p.with_suffix(".txt")
     with open(path, "w", encoding="utf-8") as fh:
         fh.write("\t".join(h) + "\n")
@@ -219,7 +220,7 @@ def _f_txt_tab(p, h, rows):
     return path
 
 
-def _f_txt_kv(p, h, rows):
+def _f_txt_kv(p, h, rows, attrs=None):
     path = p.with_suffix(".log")
     with open(path, "w", encoding="utf-8") as fh:
         for r in rows:
@@ -231,13 +232,62 @@ def _f_txt_kv(p, h, rows):
                 toks.append(f"{c}={v}")
             fh.write(" ".join(toks) + "\n")
     return path
+def _f_txt_prose(p, h, rows, attrs=None):
+    """Free-form log lines: tokens in prose, not key=value (dynamic extractor).
+
+    ``attrs`` maps each header position back to its attribute, so obfuscated
+    headers (c0, c1, ...) still render the right values, and only the
+    attributes actually present are written — no fabricated dimensions.
+    """
+    attrs = attrs or list(range(len(h)))
+    idx = {a: i for i, a in enumerate(attrs)}
+
+    def _val(r, a):
+        i = idx.get(a)
+        if i is None or i >= len(h):
+            return ""
+        return str(r.get(h[i], ""))
+
+    path = p.with_suffix(".log")
+    with open(path, "w", encoding="utf-8") as fh:
+        for r in rows:
+            ts = _val(r, "ts")
+            amt = _val(r, "amt")
+            cparty = _val(r, "cparty")
+            actor = _val(r, "actor")
+            has_dur = any(_val(r, a) for a in ("dur", "duration"))
+            parts = []
+            if ts:
+                parts.append(ts)
+            parts.append("INFO")
+            parts.append("call" if has_dur else "transfer")
+            if actor:
+                parts.append(f"from {actor}")
+            if cparty:
+                parts.append(f"to {cparty}")
+            if amt:
+                # honest prose: a bare number is not money — label it with a
+                # currency code so the typed-token extractor can type it too
+                amt_tok = str(amt)
+                if not re.search(r"[$€£₹]|(?:\b(?:USD|EUR|GBP|INR)\b)", amt_tok):
+                    amt_tok = f"{amt_tok} USD"
+                parts.append(f"amount {amt_tok}")
+            if has_dur:
+                parts.append("duration 120s")
+            fh.write(" ".join(parts) + "\n")
+    return path
 
 
 FORMATS = {
     "csv-comma": _f_csv_comma, "csv-tsv": _f_csv_tsv, "csv-semi": _f_csv_semi,
     "csv-pipe": _f_csv_pipe, "json": _f_json, "jsonl": _f_jsonl,
-    "txt-tab": _f_txt_tab, "txt-kv": _f_txt_kv,
+    "txt-tab": _f_txt_tab, "txt-kv": _f_txt_kv, "txt-prose": _f_txt_prose,
 }
+
+# txt-prose renders only the fields the prose template can carry; the other
+# formats round-trip every attribute verbatim.
+FORMAT_SLOTS = {fmt: None for fmt in FORMATS}
+FORMAT_SLOTS["txt-prose"] = {"timestamp", "amount", "counterparty", "actor_id"}
 
 # header styles that defeat header matching (content probe must carry)
 CONTENT_ONLY_STYLES = ("obscure", "scrambled")
@@ -383,7 +433,7 @@ def main() -> int:
             try:
                 header = _header_for(attrs, hstyle)
                 rows = build_rows(attrs, n_rows, header=header, sparse=label == "sparse_null")
-                path = FORMATS[fmt_name](tmp / f"case{idx}", header, rows)
+                path = FORMATS[fmt_name](tmp / f"case{idx}", header, rows, attrs)
                 loaded = load_any(str(path))
                 det = detect_dataframe(loaded.df, file=path.name, mode="hybrid")
 
@@ -401,6 +451,9 @@ def main() -> int:
                     exp.discard("")  # actor pseudo-slots count via content probe
                 else:
                     exp = {s for s in expected_slots if s}
+                cap = FORMAT_SLOTS[fmt_name]
+                if cap is not None:
+                    exp &= cap
                 got = {s for s in exp if resolved.get(s, "unmapped") != "unmapped"}
                 missing = exp - got
                 if missing:

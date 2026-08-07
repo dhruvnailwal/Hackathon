@@ -63,7 +63,7 @@ def main() -> int:
         for idx, (source, label, attrs, n_rows, hstyle, fmt_name) in enumerate(cases):
             header = _header_for(attrs, hstyle)
             rows = build_rows(attrs, n_rows, header=header, sparse=label == "sparse_null")
-            path = FORMATS[fmt_name](tmp / f"case{idx}", header, rows)
+            path = FORMATS[fmt_name](tmp / f"case{idx}", header, rows, attrs)
             loaded = load_any(str(path))
 
             per_mode: Dict[str, dict] = {}

@@ -77,10 +77,59 @@ def generate_all(
     n_surprise: int = 12,
     threshold: float = 10000.0,
 ) -> Dict[str, Path]:
+    files = {}
+    scenario = build_scenario(seed=seed, surprise_seed=surprise_seed,
+                              n_background=n_background,
+                              n_per_storyline=n_per_storyline,
+                              n_surprise=n_surprise, threshold=threshold)
+    bank_rows, cdr_rows, social_rows = scenario["bank_rows"], scenario["cdr_rows"], scenario["social_rows"]
+    annotations = scenario["annotations"]
+    surprise_ids = scenario["surprise_ids"]
+
     out_dir = Path(out_dir)
     sources_dir = out_dir / "sources"
     sources_dir.mkdir(parents=True, exist_ok=True)
 
+    rng = scenario["rng"]  # same stream that generated the people (header picks)
+
+    if not bank_rows.empty:
+        files["bank"] = _emit_source(out_dir, "bank", bank_rows, rng, "bank_export.csv")
+    if not cdr_rows.empty:
+        files["cdr"] = _emit_source(out_dir, "cdr", cdr_rows, rng, "cdr_export.csv")
+    if not social_rows.empty:
+        files["social"] = _emit_source(out_dir, "social", social_rows, rng, "social_export.csv")
+
+    # answer keys
+    answer_key = {"entities": annotations, "meta": {"threshold": threshold}}
+    (out_dir / "answer_key.json").write_text(json.dumps(answer_key, indent=2))
+
+    # secret surprise key — write-only (used by eval harness only)
+    surprise_key = {
+        "entities": {pid_: annotations[pid_] for pid_ in surprise_ids},
+        "meta": {"seed": surprise_seed},
+    }
+    (out_dir / "answer_key_surprise.json").write_text(json.dumps(surprise_key, indent=2))
+
+    files["answer_key"] = out_dir / "answer_key.json"
+    files["surprise_key"] = out_dir / "answer_key_surprise.json"
+    return files
+
+
+def build_scenario(
+    seed: int = 42,
+    surprise_seed: int = 99,
+    n_background: int = 90,
+    n_per_storyline: int = 3,
+    n_surprise: int = 12,
+    threshold: float = 10000.0,
+) -> Dict:
+    """Deterministic people + events + annotations (the joint fact sheet).
+
+    Everything below is *one* draw from the RNGs; separate outputs (CSVs,
+    JSONL streams, free-form logs) rendered from this sheet are identical in
+    entity identity and storylines — so any two formats must evaluate to the
+    same recall if the dynamic extractor is working.
+    """
     rng = random.Random(seed)
     sng = random.Random(surprise_seed)
 
@@ -152,9 +201,6 @@ def generate_all(
         event_holder[p.person_id] = events
         annotations[p.person_id] = _annotate(p, "surprise", storyline, ann["note"], ann)
 
-    # ------------------------------------------------------------------------------
-    # write CSVs per source, with varied headers
-    # ------------------------------------------------------------------------------
     bank_rows, cdr_rows, social_rows = [], [], []
     for p in people.values():
         for ev in p._events.get("bank", []):
@@ -164,33 +210,15 @@ def generate_all(
         for ev in p._events.get("social", []):
             social_rows.append(ev)
 
-    files = {}
-    if bank_rows:
-        df = pd.DataFrame(bank_rows)
-        files["bank"] = _emit_source(out_dir, "bank", df, rng, "bank_export.csv")
-    if cdr_rows:
-        df = pd.DataFrame(cdr_rows)
-        files["cdr"] = _emit_source(out_dir, "cdr", df, rng, "cdr_export.csv")
-    if social_rows:
-        df = pd.DataFrame(social_rows)
-        files["social"] = _emit_source(out_dir, "social", df, rng, "social_export.csv")
-
-    # ------------------------------------------------------------------------------
-    # answer keys
-    # ------------------------------------------------------------------------------
-    answer_key = {"entities": annotations, "meta": {"threshold": threshold}}
-    (out_dir / "answer_key.json").write_text(json.dumps(answer_key, indent=2))
-
-    # secret surprise key — write-only (used by eval harness only)
-    surprise_key = {
-        "entities": {pid_: annotations[pid_] for pid_ in surprise_ids},
-        "meta": {"seed": surprise_seed},
+    return {
+        "rng": rng,
+        "people": people,
+        "annotations": annotations,
+        "surprise_ids": surprise_ids,
+        "bank_rows": pd.DataFrame(bank_rows),
+        "cdr_rows": pd.DataFrame(cdr_rows),
+        "social_rows": pd.DataFrame(social_rows),
     }
-    (out_dir / "answer_key_surprise.json").write_text(json.dumps(surprise_key, indent=2))
-
-    files["answer_key"] = out_dir / "answer_key.json"
-    files["surprise_key"] = out_dir / "answer_key_surprise.json"
-    return files
 
 
 def apply_surprise_entities(people: Dict[str, Person], sng: random.Random, n: int, pid: int) -> List[str]:

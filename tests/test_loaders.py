@@ -83,6 +83,62 @@ def test_text_unstructured_single_column(tmp_path):
     assert r.warning
 
 
+def test_text_prose_log_typed_fields(tmp_path):
+    """Free-form log lines still yield typed fields (dynamic token inference)."""
+    p = _write(tmp_path, "prose.log",
+               "2022-09-01 00:20:10 INFO transfer from 8000EBD270 to 8000EBD520 "
+               "amount 3697.34 USD\n"
+               "2022-09-01 00:25:03 INFO transfer from 8000EBD270 to 8000EBD520 "
+               "amount 214.70 USD\n")
+    r = load_text(p)
+    assert r.format == "text"
+    assert {"ts", "amount", "account", "counterparty", "event_type"} <= set(r.df.columns)
+    assert r.df["amount"].iloc[0] == "3697.34"
+    assert r.df["account"].iloc[0] == "8000EBD270"
+    assert r.df["counterparty"].iloc[0] == "8000EBD520"
+    assert not r.warning
+
+
+def test_text_prose_inr_amounts(tmp_path):
+    """Rupee-denominated free-form lines normalize to bare numbers."""
+    p = _write(tmp_path, "inr.log",
+               "2022-09-01 00:20:10 INFO transfer from ACCT-1001 to ACCT-2002 "
+               "amount Rs. 9,87,654.00\n"
+               "2022-09-01 00:25:03 INFO transfer from ACCT-1001 to ACCT-2002 "
+               "amount ₹ 45,000.00\n")
+    r = load_text(p)
+    assert r.df["amount"].iloc[0] == "987654.00"
+    assert r.df["amount"].iloc[1] == "45000.00"
+
+
+def test_text_prose_ignores_plain_notes(tmp_path):
+    p = _write(tmp_path, "notes.txt",
+               "the quick brown fox\njumps over the lazy dog\nmeeting at noon\n")
+    r = load_text(p)
+    assert list(r.df.columns) == ["text"]
+    assert r.warning
+
+
+def test_text_prose_handles_and_duration(tmp_path):
+    """Social handles (@x.y) and CDR durations are recovered as typed tokens."""
+    p = _write(tmp_path, "mixed.log",
+               "2022-09-01 00:20:10 call from 6391000001 to 6391000002 "
+               "duration 45 seconds\n"
+               "2022-09-01 00:40:00 post by @ana.duarte238 "
+               "mentions @ben.tanaka901\n")
+    r = load_text(p)
+    assert r.format == "text"
+    assert not r.warning
+    pairs = r.df.sort_values("ts").reset_index(drop=True)
+    assert pairs["account"].iloc[0] == "6391000001"
+    assert pairs["counterparty"].iloc[0] == "6391000002"
+    assert pairs["duration"].iloc[0] == "45"
+    assert pairs["event_type"].iloc[0] == "call"
+    assert pairs["account"].iloc[1] == "@ana.duarte238"
+    assert pairs["counterparty"].iloc[1] == "@ben.tanaka901"
+    assert pairs["event_type"].iloc[1] == "post"
+
+
 def test_unsupported_extension(tmp_path):
     p = _write(tmp_path, "j.xlsx", "nope")
     import pytest

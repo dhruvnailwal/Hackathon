@@ -49,6 +49,8 @@ def main() -> int:
     rc |= run("Internet-sample fetch + pipeline", "scripts/fetch_samples.py")
     rc |= run("Model-zoo comparison", "scripts/model_zoo_eval.py")
     rc |= run("Hyperparameter sweep", "scripts/tune.py")
+    rc |= run("Research-format validation", "scripts/research_formats_validate.py",
+              ["--out", "results/research_formats"])
     rc |= run("Baseline snapshot", "eval.py", ["--out", "results/baseline"])
     rc |= run("UI smoke screenshot", "main_app.py", ["--shot", "results/ui_check.png"])
 
