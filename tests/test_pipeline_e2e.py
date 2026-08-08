@@ -53,12 +53,16 @@ def test_report_generation(synthetic_dir, tmp_path):
     cfg = PipelineConfig()
     written = generate_report(res, cfg, tmp_path)
     md = (tmp_path / "report.md").read_text(encoding="utf-8")
-    assert "What we found about your data" in md
+    assert "Cross-Source Anomaly Intelligence Brief" in md
+    assert "analysis depth auto-adapted to the data" in md
     assert "The people who stand out" in md
     assert "Where the records came from" in md
     assert "When it happened" in md
     # the human report must not expose jargon/scores
     assert "model" not in md.lower()
+    # charts must be embedded in the markdown itself (self-contained export)
+    assert "data:image/png;base64," in md
+    assert md.count("data:image/png;base64,") >= 2
     assert (tmp_path / "report.json").exists()
     assert (tmp_path / "report.html").exists()
     assert (tmp_path / "report.pdf").exists()

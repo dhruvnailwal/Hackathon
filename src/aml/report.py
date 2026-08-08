@@ -38,6 +38,21 @@ RISK_COLORS = {
     "LOW": MINT,
 }
 
+# Judge-facing report branding (shared by markdown / HTML / PDF)
+REPORT_TITLE = "Cross-Source Anomaly Intelligence Brief"
+REPORT_SUBTITLE = ("Automatic screening of financial, telecom and social "
+                   "activity — every flagged person is backed by concrete, "
+                   "explainable evidence.")
+
+
+def _generated_line(res) -> str:
+    """Timestamp + scope line under the report title."""
+    ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+    n_files = len(res.per_source)
+    n_src = len({rs.source for rs in res.per_source})
+    return (f"Generated {ts} · {n_files} source file(s) across "
+            f"{n_src} data type(s) · analysis depth auto-adapted to the data")
+
 
 def _fmt(v: float) -> str:
     return f"{v:,.0f}"
@@ -96,17 +111,24 @@ def _has_timeline(res) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# markdown
+# markdown (self-contained: charts inlined as base64 PNG data URIs so the
+# .md file renders everywhere — email, GitHub, other machines — without the
+# charts/ folder travelling with it)
 # ---------------------------------------------------------------------------
 def _md_chart(chart: Path) -> str:
-    return f"![{chart.stem}]({chart.as_posix()})"
+    if not Path(chart).exists():
+        return ""
+    b64 = base64.b64encode(Path(chart).read_bytes()).decode("ascii")
+    return f"![{Path(chart).stem}](data:image/png;base64,{b64})"
 
 
 def _markdown(res, cfg, charts: Dict[str, Path]) -> str:
     insight = _insights_for(res, cfg)
     L: List[str] = []
-    L.append("# What we found about your data")
-    L.append(f"*Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}*")
+    L.append(f"# {REPORT_TITLE}")
+    L.append(f"*{_generated_line(res)}*")
+    L.append("")
+    L.append(REPORT_SUBTITLE)
     L.append("")
     for line in _overview_lines(res, insight):
         L.append(line)
@@ -257,9 +279,8 @@ def _html(res, cfg, charts: Dict[str, Path]) -> str:
   .footnote {{ color: {MUTED}; font-size: 12px; margin-top: 12px; }}
 </style></head>
 <body><div class="wrap">
-  <h1>What we found about your data</h1>
-  <div class="meta">Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
-    · sources: <code>{cfg.sources_dir}</code></div>
+  <h1>{REPORT_TITLE}</h1>
+  <div class="meta">{REPORT_SUBTITLE}<br>{_generated_line(res)}</div>
   <div class="card">{overview_html}
     <div class="stats">{stat_chips}</div></div>
   <div class="card"><h2>The people who stand out</h2>{insight_cards}</div>
@@ -338,9 +359,8 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path]) -> Path:
 
     insight_list = _insights_for(res, cfg)
     story = [
-        Paragraph("What we found about your data", h1),
-        Paragraph(f"Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} · "
-                  f"sources: {cfg.sources_dir}", meta),
+        Paragraph(REPORT_TITLE, h1),
+        Paragraph(f"{_generated_line(res)} · {REPORT_SUBTITLE}", meta),
         Spacer(1, 4 * mm),
     ]
     for line in _overview_lines(res, insight_list):

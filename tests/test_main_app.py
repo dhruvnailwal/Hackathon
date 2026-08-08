@@ -3,7 +3,7 @@ import types
 
 import pandas as pd
 import pytest
-from PySide6.QtWidgets import QApplication, QPushButton
+from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -99,3 +99,71 @@ def test_history_dialog_lists_runs(qt_app, tmp_path, monkeypatch):
     dlg.runs = [{"run_id": "r1", "summary": {"events": 10}, "created_at": "t"}]
     dlg.rerun_list()
     assert dlg.selected_run_id() is None  # nothing selected yet
+
+
+# ---------------------------------------------------------------------------
+# file management: per-file remove + clear all (available post-analysis too)
+# ---------------------------------------------------------------------------
+def test_files_can_be_removed_individually(qt_app, synthetic_dir):
+    win = MainWindow()
+    paths = [str(p) for p in sorted((synthetic_dir / "sources").glob("*"))]
+    win.home._add_files(paths)
+    assert len(win.home._files) == len(paths)
+
+    first = win.home._files[0]
+    win.home._remove_file(first)
+    assert first not in win.home._files
+    assert len(win.home._files) == len(paths) - 1
+    assert win.home.btn_analyze.isEnabled()
+
+    # removing everything disables Analyze again
+    for p in list(win.home._files):
+        win.home._remove_file(p)
+    assert win.home._files == []
+    assert win.home.btn_analyze.isEnabled() is False
+    assert win.home.btn_clear.isEnabled() is False
+
+
+def test_clear_all_restores_empty_state(qt_app, synthetic_dir):
+    win = MainWindow()
+    paths = [str(p) for p in sorted((synthetic_dir / "sources").glob("*"))]
+    win.home._add_files(paths)
+    win.home._clear_files()
+    assert win.home._files == []
+    assert win.home.btn_analyze.isEnabled() is False
+    assert "No files loaded yet" in win.home.status.text()
+
+
+def test_every_file_row_has_a_remove_button(qt_app, synthetic_dir):
+    from main_app import FileRow
+    paths = [str(p) for p in sorted((synthetic_dir / "sources").glob("*"))]
+    win = MainWindow()
+    win.home._add_files(paths)
+    rows = []
+    for i in range(win.home.list_lay.count()):
+        w = win.home.list_lay.itemAt(i).widget()
+        if isinstance(w, FileRow):
+            rows.append(w)
+    assert len(rows) == len(paths)
+    assert all(r.btn_remove is not None for r in rows)
+    # clicking the row's ✕ removes exactly that file
+    target = rows[0].path
+    rows[0].btn_remove.click()
+    assert target not in win.home._files
+
+
+def test_toast_is_non_blocking(qt_app):
+    win = MainWindow()
+    win.toast("hello toast")
+    toast = win._toast
+    # the toast is an overlay label, not a modal dialog
+    assert "hello toast" in toast.text()
+    assert not any(isinstance(w, QMessageBox) for w in QApplication.topLevelWidgets())
+
+
+def test_export_missing_report_uses_toast_not_alert(qt_app, tmp_path):
+    win = MainWindow()
+    # point the report view at a run folder with no generated report files
+    win.report._html_path = str(tmp_path)
+    win._export("md")
+    assert not any(isinstance(w, QMessageBox) for w in QApplication.topLevelWidgets())
