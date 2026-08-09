@@ -69,7 +69,13 @@ def test_report_generation(synthetic_dir, tmp_path):
     assert (tmp_path / "report.html").read_text(encoding="utf-8").startswith("<!DOCTYPE html>")
     assert list(written) == ["markdown", "html", "pdf", "json"]
     charts = list((tmp_path / "charts").glob("*.png"))
-    assert len(charts) == 3, f"expected 3 charts, got {len(charts)}"
+    names = {p.name for p in charts}
+    assert len(charts) >= 3, f"expected at least 3 charts, got {len(charts)}"
+    assert {"network.png", "map.png", "people.png", "sources.png",
+            "timeline.png"} <= names
+    assert any(n.startswith("entity_") for n in names)
+    assert "Who the flagged people are connected to" in md
+    assert "The activity map" in md
     from pypdf import PdfReader
     pdf = PdfReader(str(tmp_path / "report.pdf"))
     assert len(pdf.pages) >= 1

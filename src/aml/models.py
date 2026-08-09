@@ -1174,6 +1174,202 @@ def fuse_weighted_sum(scores, df, weights=None):
 
 
 # ===========================================================================
+# DEEP — torch models (LSTM autoencoder, temporal message-passing GNN)
+# ===========================================================================
+def _torch():
+    """Return the torch module if it is already loaded; else None.
+
+    aml/__init__ attempts the import once at process start (see its comment
+    about the Windows crash). We never import torch lazily mid-run: a second
+    import attempt after pandas/sklearn have been used reliably segfaults on
+    this platform, so the deep models just skip if torch isn't available.
+    """
+    import sys
+    return sys.modules.get("torch")
+
+
+def _event_sequences(df, seq_len: int = 64, min_events: int = 8):
+    """Per-entity event feature sequences (sorted, padded to seq_len).
+
+    Feature per event: [log amount, gap hours, hour-of-day, is_call,
+    is_txn, is_post] — the raw material the LSTM autoencoder reconstructs.
+    Returns (ids, np.ndarray (n, seq_len, 6)).
+    """
+    import numpy as np
+    sub = df.dropna(subset=["entity_id"]).copy()
+    sub["entity_id"] = sub["entity_id"].astype(str)
+    sub["ts"] = pd.to_datetime(sub["timestamp"], errors="coerce")
+    max_amt = pd.to_numeric(sub["amount"], errors="coerce").max()
+    max_amt = max_amt if max_amt and max_amt > 0 else 1.0
+
+    ids, seqs = [], []
+    for eid, g in sub.groupby("entity_id"):
+        g = g.sort_values("ts")
+        if len(g) < min_events or g["ts"].notna().sum() < min_events:
+            continue
+        amt = np.log1p(pd.to_numeric(g["amount"], errors="coerce").fillna(0).values)
+        amt = np.clip(amt / np.log1p(max_amt), 0, 1)
+        gap = np.concatenate([[0.0], np.diff(g["ts"].astype(np.int64) / 1e9 / 3600)])
+        gap = np.clip(gap, 0, 96) / 96.0
+        hour = g["ts"].dt.hour.fillna(0).values / 24.0
+        et = g.get("event_type", pd.Series("", index=g.index)).fillna("").values
+        feat = np.column_stack([
+            amt, gap, hour,
+            (et == "call").astype(float),
+            (et == "transaction").astype(float),
+            (et == "post").astype(float),
+        ])
+        if len(feat) > seq_len:
+            feat = feat[-seq_len:]
+        pad = np.zeros((seq_len - len(feat), 6))
+        seqs.append(np.vstack([pad, feat]))
+        ids.append(eid)
+    if not seqs:
+        return [], np.zeros((0, seq_len, 6))
+    return ids, np.stack(seqs)
+
+
+def fit_statml_lstm(df: pd.DataFrame, seq_len: int = 64, hidden: int = 32,
+                    epochs: int = 24, lr: float = 1e-2, seed: int = 0) -> Dict[str, float]:
+    """LSTM autoencoder over per-entity event sequences.
+
+    Encodes each entity's ordered event features (amount, timing rhythm,
+    source mix) into a bottleneck hidden state and tries to reconstruct the
+    whole sequence; entities whose behaviour can't be reconstructed from a
+    compressed latent are feature-space sequential outliers. Unsupervised —
+    trains on the ingested population, no labels needed.
+    """
+    torch = _torch()
+    if torch is None:
+        return {}
+    ids, X = _event_sequences(df, seq_len=seq_len)
+    if not ids:
+        return {}
+    torch.manual_seed(seed)
+    Xt = torch.tensor(X, dtype=torch.float32)
+    n, L, F = Xt.shape
+
+    lstm = torch.nn.LSTM(F, hidden, batch_first=True)
+    head = torch.nn.Linear(hidden, L * F)
+
+    opt = torch.optim.Adam(list(lstm.parameters()) + list(head.parameters()),
+                           lr=lr)
+    mse = torch.nn.MSELoss()
+    for _ in range(epochs):
+        h, _ = lstm(Xt)
+        z = h[:, -1, :]
+        rec = head(z).view(n, L, F)
+        loss = mse(rec, Xt)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+
+    with torch.no_grad():
+        h, _ = lstm(Xt)
+        rec = head(h[:, -1, :]).view(n, L, F)
+        raw = ((rec - Xt) ** 2).mean(dim=(1, 2)).numpy()
+    return _scoremin(raw, ids)
+
+
+def _graph_parts(df, buckets: int = 8, min_edges: int = 20):
+    """(nodes, node features, adjacency list per time bucket, weights)."""
+    edges = df.dropna(subset=["entity_id", "counterparty_id"]).copy()
+    edges["entity_id"] = edges["entity_id"].astype(str)
+    edges["counterparty_id"] = edges["counterparty_id"].astype(str)
+    if len(edges) < min_edges:
+        return None
+    nodes = sorted(set(edges["entity_id"]) | set(edges["counterparty_id"]))
+    idx = {v: i for i, v in enumerate(nodes)}
+    n = len(nodes)
+
+    feats = build_features(df)
+    F_cols = ["n_events", "fan_in", "fan_out", "amt_total", "amt_mean",
+              "amt_std", "hour_entropy", "night_ratio"]
+    Xf = feats.reindex(nodes)[F_cols].fillna(0.0).to_numpy(dtype=float)
+    Xf = (Xf - Xf.mean(axis=0)) / (Xf.std(axis=0) + EPS)
+    Xf = np.nan_to_num(Xf, nan=0.0, posinf=0.0, neginf=0.0)
+
+    amt = pd.to_numeric(edges["amount"], errors="coerce").fillna(0.0)
+    w = (1.0 + np.log1p(amt.clip(lower=0)).values)
+
+    ts = pd.to_datetime(edges["timestamp"], errors="coerce")
+    if ts.notna().sum() >= buckets and buckets > 1:
+        qs = np.quantile(ts.astype(np.int64).dropna().values,
+                         np.linspace(0, 1, buckets + 1)[1:-1])
+        b = ts.astype(np.int64).apply(lambda v: int(np.searchsorted(qs, v)))
+    else:
+        b = np.zeros(len(edges), dtype=int)
+    return nodes, Xf, b, edges, idx, w
+
+
+def fit_network_tgn(df: pd.DataFrame, buckets: int = 8, hidden: int = 32,
+                    epochs: int = 200, lr: float = 5e-3, seed: int = 0) -> Dict[str, float]:
+    """Temporal message-passing GNN (TGN-lite): shared-weight graph
+    autoencoder across time buckets.
+
+    Each time bucket gets its own adjacency slice of the transaction/call
+    graph; two shared GCN layers propagate node features within the slice;
+    the per-bucket embeddings are pooled and must reconstruct each bucket's
+    adjacency (sigmoid(E E^T)). Nodes whose neighbourhood can't be rebuilt
+    from the compressed representation deviate from the graph's own
+    structure — no labels needed.
+    """
+    torch = _torch()
+    if torch is None:
+        return {}
+    parts = _graph_parts(df, buckets=buckets)
+    if parts is None:
+        return {}
+    nodes, Xf, b, edges, idx, w = parts
+    n = Xf.shape[0]
+    if n < 8:
+        return {}
+    torch.manual_seed(seed)
+
+    Xt = torch.tensor(Xf, dtype=torch.float32)
+    A = torch.zeros(buckets, n, n)
+    for (u, v), bucket in zip(
+            zip(edges["entity_id"], edges["counterparty_id"]), b):
+        iu, iv = idx[u], idx[v]
+        A[bucket, iu, iv] += 1.0
+    d = A.sum(dim=-1).clamp(min=1.0)
+    A = A / d.unsqueeze(-1)
+    A = A + torch.eye(n).unsqueeze(0)
+
+    F = Xt.shape[1]
+    W1 = torch.nn.Parameter(torch.randn(F, hidden) / (F ** 0.5))
+    W2 = torch.nn.Parameter(torch.randn(hidden, hidden) / (hidden ** 0.5))
+    params = [W1, W2]
+    opt = torch.optim.Adam(params, lr=lr)
+    target = (A.sum(dim=0) > 0).float()    # union of edges across buckets
+
+    def _forward():
+        Y = Xt @ W1                       # (n, H) feature projection
+        H = torch.relu(A @ Y)             # (t, n, H) 1st GCN layer
+        H = torch.relu((A @ H) @ W2)      # 2nd layer, (t, n, H)
+        E = H.mean(dim=0)                 # (n, H) pooled across time
+        return E
+
+    pos = target.sum().item()
+    pos_w = max(1.0, (target.numel() - pos) / max(pos, 1))
+    bce = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_w))
+
+    for _ in range(epochs):
+        E = _forward()
+        logits = E @ E.t()
+        loss = bce(logits, target)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+
+    with torch.no_grad():
+        E = _forward()
+        R = torch.sigmoid(E @ E.t())
+        raw = ((R - target) ** 2).mean(dim=1).numpy()
+    return _scoremin(raw, nodes)
+
+
+# ===========================================================================
 # dispatch used by the pipeline
 # ===========================================================================
 def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
@@ -1224,6 +1420,10 @@ def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
         return fit_statml_gmm(df)
     if name == "statml_kde":
         return fit_statml_kde(df)
+    if name == "statml_lstm":
+        return fit_statml_lstm(df)
+    if name == "network_tgn":
+        return fit_network_tgn(df)
     if name == "benford":
         return fit_benford(df)
     if name == "benford_ks":

@@ -23,7 +23,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
-from eval import load_truth, map_truth_to_entities, to_records, recall_precision  # noqa: E402
 from aml.loaders import collect_files  # noqa: E402
 from aml.models import (  # noqa: E402
     run_model,
@@ -32,17 +31,22 @@ from aml.models import (  # noqa: E402
 )
 from aml.pipeline import Pipeline  # noqa: E402
 
+# NOTE: aml (and torch) must be imported BEFORE eval, which pulls in
+# pandas/sklearn first; importing torch after those is what segfaults on
+# Windows (access violation inside torch's own import chain).
+from eval import load_truth, map_truth_to_entities, to_records, recall_precision  # noqa: E402
+
 # families: name -> list of candidate model names (run_model dispatch)
 FAMILIES = {
     "time_correlation": ["time_correlation", "time_correlation_backward",
                          "time_correlation_anypair", "time_velocity"],
     "network": ["oddball", "oddball_signed", "burst", "degree_deviation",
                 "reciprocity", "pagerank_deviation", "community_motif",
-                "scatter_gather"],
+                "scatter_gather", "network_tgn"],
     "statml": ["statml", "statml_eif", "statml_lof", "statml_mahalanobis",
                "statml_pca", "statml_zscore", "statml_ocsvm",
                "statml_autoencoder", "statml_hbos", "statml_gmm",
-               "statml_kde"],
+               "statml_kde", "statml_lstm"],
     "benford": ["benford", "benford_ks", "benford_second"],
     "structuring": ["structuring", "structuring_banded"],
     "behavioral": ["behavioral"],
@@ -63,7 +67,13 @@ FUSIONS = {
     "borda_nobonus": lambda s, df: fuse_rank_borda(s, df, max_bonus=0.0),
     "rank_avg": lambda s, df: fuse_rank_average(s, df),
     "score_mean": lambda s, df: fuse_score_mean(s, df),
+    "meta": lambda s, df: _fuse_meta(s, df),
 }
+
+
+def _fuse_meta(s, df):
+    from aml.fusion_meta import fuse_rank_meta
+    return fuse_rank_meta(s, df)
 
 
 def evalscore(scores: dict, truth_anom: set, truth_type: dict) -> dict:

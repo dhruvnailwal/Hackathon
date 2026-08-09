@@ -172,6 +172,28 @@ def _markdown(res, cfg, charts: Dict[str, Path]) -> str:
     else:
         L.append("No timestamped records were found in the files.")
     L.append("")
+
+    if charts.get("network") and charts.get("people") is not None:
+        L.append("## Who the flagged people are connected to")
+        L.append("")
+        L.append(_md_chart(charts["network"]))
+        L.append("")
+
+    if charts.get("map"):
+        L.append("## The activity map")
+        L.append("")
+        L.append(_md_chart(charts["map"]))
+        L.append("")
+
+    if charts.get("drill"):
+        L.append("## A closer look at the people who stand out")
+        L.append("")
+        for title, img in charts["drill"].items():
+            L.append(f"### {title}")
+            L.append("")
+            L.append(_md_chart(img))
+            L.append("")
+
     L.append("_The full technical detail behind this analysis is kept in "
              "`report.json` — this report is the human summary._")
     return "\n".join(L)
@@ -243,6 +265,14 @@ def _html(res, cfg, charts: Dict[str, Path]) -> str:
                       '<p style="color:#6b857d">No timestamped records were found '
                       'in the files.</p>')
 
+    network_block = (f'<img src="{_b64(charts["network"])}" style="margin-top:14px">'
+                     if charts.get("network") else "")
+    map_block = (f'<img src="{_b64(charts["map"])}" style="margin-top:14px">'
+                 if charts.get("map") else "")
+    drill_imgs = "\n".join(
+        f'<p style="margin:14px 0 4px;font-weight:700">{_htmlize(title)}</p>'
+        f'<img src="{_b64(img)}">' for title, img in (charts.get("drill") or {}).items())
+
     return f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Anomaly Lens report</title>
 <style>
@@ -285,6 +315,9 @@ def _html(res, cfg, charts: Dict[str, Path]) -> str:
     <div class="stats">{stat_chips}</div></div>
   <div class="card"><h2>The people who stand out</h2>{insight_cards}</div>
   <div class="card"><h2>When it happened</h2>{timeline_block}</div>
+  <div class="card"><h2>Who the flagged people are connected to</h2>{network_block}</div>
+  <div class="card"><h2>The activity map</h2>{map_block}</div>
+  <div class="card"><h2>A closer look at the people who stand out</h2>{drill_imgs}</div>
   <div class="card"><h2>Where the records came from</h2>
     <table><thead><tr><th>file</th><th>source</th><th>records</th><th>people</th>
     </tr></thead><tbody>{src_rows}</tbody></table>{sources_block}</div>
@@ -405,6 +438,23 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path]) -> Path:
         story.append(Image(str(charts["timeline"]), width=170 * mm, height=54 * mm))
         story.append(Spacer(1, 3 * mm))
 
+    if charts.get("network"):
+        story.append(Paragraph("Who the flagged people are connected to", h2))
+        story.append(Image(str(charts["network"]), width=170 * mm, height=90 * mm))
+        story.append(Spacer(1, 3 * mm))
+
+    if charts.get("map"):
+        story.append(Paragraph("The activity map", h2))
+        story.append(Image(str(charts["map"]), width=170 * mm, height=92 * mm))
+        story.append(Spacer(1, 3 * mm))
+
+    if charts.get("drill"):
+        story.append(Paragraph("A closer look at the people who stand out", h2))
+        for title, img in charts["drill"].items():
+            story.append(Paragraph(f"<b>{_pdfize(title)}</b>", h3))
+            story.append(Image(str(img), width=170 * mm, height=60 * mm))
+            story.append(Spacer(1, 3 * mm))
+
     story.append(Paragraph("The full technical detail behind this analysis is "
                            "kept with this report for the record — this page "
                            "is the human-readable summary.", meta))
@@ -425,6 +475,14 @@ def generate_report(result, config, report_dir: str | Path = "data/report") -> d
         "people": visuals.render_person_attention(result, charts_dir),
         "sources": visuals.render_sources(result, charts_dir),
         "timeline": visuals.render_timeline(result, charts_dir),
+        "network": visuals.render_ego_graph(result, charts_dir),
+        "map": visuals.render_location_map(result, charts_dir),
+    }
+    top = _insights_for(result, config) or []
+    charts["drill"] = {
+        f"{it['name']} ({it['risk']})": visuals.render_entity_timeline(
+            result, charts_dir, it["entity_id"])
+        for it in top[:3]
     }
 
     markdown = _markdown(result, config, charts)

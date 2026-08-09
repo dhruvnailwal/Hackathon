@@ -35,10 +35,12 @@ class PipelineResult:
 
 class Pipeline:
     def __init__(self, min_events_per_entity: int = 30, tol_minutes: int = 25,
-                 structuring_threshold: float = 10000.0):
+                 structuring_threshold: float = 10000.0,
+                 fusion: str = "borda"):
         self.min_events_per_entity = min_events_per_entity
         self.tol_minutes = tol_minutes
         self.structuring_threshold = structuring_threshold
+        self.fusion = fusion
 
     def ingest(self, paths):
         from .loaders import load_any
@@ -108,9 +110,24 @@ class Pipeline:
                                   structuring_threshold=self.structuring_threshold)
                 if sc:
                     scores[model] = sc
-        fusion = _m.fuse_rank_borda(scores, df)
+        fusion = self._fuse(scores, df)
         result.model_scores = scores
         result.rankings = fusion.rank
         result.explanations = fusion.explanation
         result.warnings = [v.reason for v in sufficiency.values() if v.status == "BLOCKED"]
         return result
+
+    def _fuse(self, scores, df):
+        """Build the fused ranking; unknown fusion names fall back to Borda."""
+        from . import models as _m
+        if self.fusion == "meta":
+            try:
+                from .fusion_meta import fuse_rank_meta
+                return fuse_rank_meta(scores, df)
+            except Exception:
+                pass
+        if self.fusion in ("score_mean", "rank_avg", "top2"):
+            fn = {"score_mean": _m.fuse_score_mean, "rank_avg": _m.fuse_rank_average,
+                  "top2": _m.fuse_model_scores}[self.fusion]
+            return fn(scores, df)
+        return _m.fuse_rank_borda(scores, df)
