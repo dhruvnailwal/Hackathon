@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E050": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Lena Novak",
+      "phone": "6391936644374",
+      "account": "ACCT1936847",
+      "handle": "@lena.novak253",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E023": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Xin Brooks",
+      "phone": "6391847085587",
+      "account": "ACCT1842933",
+      "handle": "@xin.brooks820",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E088": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~618,812) then zero activity thereafter",
+      "name": "Elena ElSayed",
+      "phone": "6393299477204",
+      "account": "ACCT3292131",
+      "handle": "@elena.elsayed224",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~618,812) then zero activity thereafter"
+      }
+    },
+    "E074": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Fahad Wei",
+      "phone": "6398175003577",
+      "account": "ACCT8178151",
+      "handle": "@fahad.wei590",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E059": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "45 posts on one day all mentioning the same 3 handles",
+      "name": "Nia Mehta",
+      "phone": "6394701982874",
+      "account": "ACCT4707726",
+      "handle": "@nia.mehta831",
+      "details": {
+        "type": "post_burst",
+        "note": "45 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E015": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E015 -> E045 -> E066 -> E104",
+      "name": "Fahad Patida",
+      "phone": "6398096864787",
+      "account": "ACCT8097980",
+      "handle": "@fahad.patida122",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E015 -> E045 -> E066 -> E104"
+      }
+    },
+    "E065": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E017 within minutes on 6 episodes",
+      "name": "Ana Fischer",
+      "phone": "6399406323212",
+      "account": "ACCT9409981",
+      "handle": "@ana.fischer13",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E017 within minutes on 6 episodes"
+      }
+    },
+    "E060": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E019 within minutes on 6 episodes",
+      "name": "Zane Fischer",
+      "phone": "6392385746157",
+      "account": "ACCT2381314",
+      "handle": "@zane.fischer80",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E019 within minutes on 6 episodes"
+      }
+    },
+    "E028": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E086 within minutes on 6 episodes",
+      "name": "Elena Jansen",
+      "phone": "6394477195628",
+      "account": "ACCT4478210",
+      "handle": "@elena.jansen87",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E086 within minutes on 6 episodes"
+      }
+    },
+    "E079": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E101 within minutes on 6 episodes",
+      "name": "Cara Anderson",
+      "phone": "6391697329269",
+      "account": "ACCT1697663",
+      "handle": "@cara.anderson101",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E101 within minutes on 6 episodes"
+      }
+    },
+    "E055": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "41 posts on one day all mentioning the same 3 handles",
+      "name": "Victor Gomes",
+      "phone": "6399429451462",
+      "account": "ACCT9428019",
+      "handle": "@victor.gomes708",
+      "details": {
+        "type": "post_burst",
+        "note": "41 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E080": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "43 posts on one day all mentioning the same 3 handles",
+      "name": "Kai Kim",
+      "phone": "6399697255231",
+      "account": "ACCT9697347",
+      "handle": "@kai.kim451",
+      "details": {
+        "type": "post_burst",
+        "note": "43 posts on one day all mentioning the same 3 handles"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1259
+  }
+}

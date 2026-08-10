@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E012": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "56 deposits clustered just under 10,000",
+      "name": "Raj Lopes",
+      "phone": "6394455905852",
+      "account": "ACCT4458838",
+      "handle": "@raj.lopes712",
+      "details": {
+        "type": "structuring",
+        "note": "56 deposits clustered just under 10,000"
+      }
+    },
+    "E013": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E013 -> E080 -> E095 -> E006",
+      "name": "Zane Chen",
+      "phone": "6399884778804",
+      "account": "ACCT9884960",
+      "handle": "@zane.chen318",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E013 -> E080 -> E095 -> E006"
+      }
+    },
+    "E045": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E108 within minutes on 6 episodes",
+      "name": "Lena Unger",
+      "phone": "6398822594572",
+      "account": "ACCT8827100",
+      "handle": "@lena.unger353",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E108 within minutes on 6 episodes"
+      }
+    },
+    "E073": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "49 posts on one day all mentioning the same 3 handles",
+      "name": "Xin Duarte",
+      "phone": "6399001069911",
+      "account": "ACCT9006739",
+      "handle": "@xin.duarte651",
+      "details": {
+        "type": "post_burst",
+        "note": "49 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E082": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "45 deposits clustered just under 10,000",
+      "name": "Uma Zhou",
+      "phone": "6391261372709",
+      "account": "ACCT1262765",
+      "handle": "@uma.zhou350",
+      "details": {
+        "type": "structuring",
+        "note": "45 deposits clustered just under 10,000"
+      }
+    },
+    "E027": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "39 posts on one day all mentioning the same 3 handles",
+      "name": "Zane Patida",
+      "phone": "6395444600434",
+      "account": "ACCT5443968",
+      "handle": "@zane.patida155",
+      "details": {
+        "type": "post_burst",
+        "note": "39 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E056": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~278,468) then zero activity thereafter",
+      "name": "Victor Kim",
+      "phone": "6399524275233",
+      "account": "ACCT9526615",
+      "handle": "@victor.kim816",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~278,468) then zero activity thereafter"
+      }
+    },
+    "E057": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 10 senders then fan-out to 10 in ~3 days",
+      "name": "Fahad Patida",
+      "phone": "6396256583047",
+      "account": "ACCT6254159",
+      "handle": "@fahad.patida952",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 10 senders then fan-out to 10 in ~3 days"
+      }
+    },
+    "E055": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E110 within minutes on 6 episodes",
+      "name": "Noah Jansen",
+      "phone": "6399609616732",
+      "account": "ACCT9602762",
+      "handle": "@noah.jansen779",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E110 within minutes on 6 episodes"
+      }
+    },
+    "E086": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~757,336) then zero activity thereafter",
+      "name": "Nia Unger",
+      "phone": "6393326879581",
+      "account": "ACCT3323899",
+      "handle": "@nia.unger234",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~757,336) then zero activity thereafter"
+      }
+    },
+    "E014": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E016 within minutes on 6 episodes",
+      "name": "Ava Kim",
+      "phone": "6391063778018",
+      "account": "ACCT1062623",
+      "handle": "@ava.kim507",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E016 within minutes on 6 episodes"
+      }
+    },
+    "E076": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~270,082) then zero activity thereafter",
+      "name": "Ravi Iqbal",
+      "phone": "6398701820691",
+      "account": "ACCT8707957",
+      "handle": "@ravi.iqbal159",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~270,082) then zero activity thereafter"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1055
+  }
+}

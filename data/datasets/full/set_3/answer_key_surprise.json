@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E050": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 14 senders then fan-out to 10 in ~3 days",
+      "name": "Ava Diaz",
+      "phone": "6396518798247",
+      "account": "ACCT6514221",
+      "handle": "@ava.diaz274",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 14 senders then fan-out to 10 in ~3 days"
+      }
+    },
+    "E047": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Wes Yamamoto",
+      "phone": "6395913076726",
+      "account": "ACCT5914807",
+      "handle": "@wes.yamamoto901",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E017": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Uma Quinn",
+      "phone": "6397316055758",
+      "account": "ACCT7316496",
+      "handle": "@uma.quinn472",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E049": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E027 within minutes on 6 episodes",
+      "name": "Yara Gomes",
+      "phone": "6392295700924",
+      "account": "ACCT2293591",
+      "handle": "@yara.gomes750",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E027 within minutes on 6 episodes"
+      }
+    },
+    "E016": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "45 deposits clustered just under 10,000",
+      "name": "Grace Iqbal",
+      "phone": "6399617100710",
+      "account": "ACCT9616853",
+      "handle": "@grace.iqbal31",
+      "details": {
+        "type": "structuring",
+        "note": "45 deposits clustered just under 10,000"
+      }
+    },
+    "E051": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~260,818) then zero activity thereafter",
+      "name": "Cara Duarte",
+      "phone": "6396492957730",
+      "account": "ACCT6493789",
+      "handle": "@cara.duarte195",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~260,818) then zero activity thereafter"
+      }
+    },
+    "E056": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "59 deposits clustered just under 10,000",
+      "name": "Leo Kim",
+      "phone": "6396859651169",
+      "account": "ACCT6855691",
+      "handle": "@leo.kim916",
+      "details": {
+        "type": "structuring",
+        "note": "59 deposits clustered just under 10,000"
+      }
+    },
+    "E018": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E018 -> E051 -> E070 -> E047",
+      "name": "Leo Iqbal",
+      "phone": "6395726944755",
+      "account": "ACCT5724947",
+      "handle": "@leo.iqbal133",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E018 -> E051 -> E070 -> E047"
+      }
+    },
+    "E058": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 12 senders then fan-out to 8 in ~3 days",
+      "name": "Jin Quinn",
+      "phone": "6396095128059",
+      "account": "ACCT6098328",
+      "handle": "@jin.quinn367",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 12 senders then fan-out to 8 in ~3 days"
+      }
+    },
+    "E040": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E040 -> E093 -> E098 -> E003",
+      "name": "Mara Brooks",
+      "phone": "6393507307642",
+      "account": "ACCT3507254",
+      "handle": "@mara.brooks881",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E040 -> E093 -> E098 -> E003"
+      }
+    },
+    "E038": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 9 senders then fan-out to 13 in ~3 days",
+      "name": "Victor Unger",
+      "phone": "6391611816266",
+      "account": "ACCT1617871",
+      "handle": "@victor.unger811",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 9 senders then fan-out to 13 in ~3 days"
+      }
+    },
+    "E015": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~254,472) then zero activity thereafter",
+      "name": "Mara Brooks",
+      "phone": "6391681212932",
+      "account": "ACCT1681992",
+      "handle": "@mara.brooks295",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~254,472) then zero activity thereafter"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1255
+  }
+}

@@ -1,0 +1,1216 @@
+{
+  "entities": {
+    "E001": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Mara Vargas",
+      "phone": "6395858857360",
+      "account": "ACCT5853337",
+      "handle": "@mara.vargas663",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E002": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Elena Meyer",
+      "phone": "6399259509294",
+      "account": "ACCT9257720",
+      "handle": "@elena.meyer653",
+      "details": {}
+    },
+    "E003": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Wes Wei",
+      "phone": "6399458350695",
+      "account": "ACCT9453210",
+      "handle": "@wes.wei338",
+      "details": {}
+    },
+    "E004": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Xin ElSayed",
+      "phone": "6397721945417",
+      "account": "ACCT7726774",
+      "handle": "@xin.elsayed691",
+      "details": {}
+    },
+    "E005": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Priya Diaz",
+      "phone": "6391084230798",
+      "account": "ACCT1086944",
+      "handle": "@priya.diaz518",
+      "details": {}
+    },
+    "E006": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Wes Gomes",
+      "phone": "6399931987599",
+      "account": "ACCT9933881",
+      "handle": "@wes.gomes768",
+      "details": {}
+    },
+    "E007": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Hugo Haddad",
+      "phone": "6393845450216",
+      "account": "ACCT3844093",
+      "handle": "@hugo.haddad827",
+      "details": {}
+    },
+    "E008": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Omar Duarte",
+      "phone": "6393575857197",
+      "account": "ACCT3578952",
+      "handle": "@omar.duarte304",
+      "details": {}
+    },
+    "E009": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Sara Tanaka",
+      "phone": "6393364227087",
+      "account": "ACCT3361793",
+      "handle": "@sara.tanaka997",
+      "details": {}
+    },
+    "E010": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 9 senders then fan-out to 11 in ~3 days",
+      "name": "Lena Chen",
+      "phone": "6399998948139",
+      "account": "ACCT9998454",
+      "handle": "@lena.chen237",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 9 senders then fan-out to 11 in ~3 days"
+      }
+    },
+    "E011": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Elena Jansen",
+      "phone": "6399443997732",
+      "account": "ACCT9444099",
+      "handle": "@elena.jansen951",
+      "details": {}
+    },
+    "E012": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Nia Anderson",
+      "phone": "6392975411874",
+      "account": "ACCT2978004",
+      "handle": "@nia.anderson473",
+      "details": {}
+    },
+    "E013": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Sara Kim",
+      "phone": "6394184973778",
+      "account": "ACCT4184589",
+      "handle": "@sara.kim265",
+      "details": {}
+    },
+    "E014": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Uma Rossi",
+      "phone": "6396995209412",
+      "account": "ACCT6999637",
+      "handle": "@uma.rossi891",
+      "details": {}
+    },
+    "E015": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E012 within minutes on 6 episodes",
+      "name": "Xin Brooks",
+      "phone": "6398836017933",
+      "account": "ACCT8834641",
+      "handle": "@xin.brooks115",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E012 within minutes on 6 episodes"
+      }
+    },
+    "E016": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Grace Gomes",
+      "phone": "6396398103610",
+      "account": "ACCT6397655",
+      "handle": "@grace.gomes325",
+      "details": {}
+    },
+    "E017": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Lena Yamamoto",
+      "phone": "6391765638305",
+      "account": "ACCT1766438",
+      "handle": "@lena.yamamoto573",
+      "details": {}
+    },
+    "E018": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Noah Jansen",
+      "phone": "6398728609934",
+      "account": "ACCT8722439",
+      "handle": "@noah.jansen868",
+      "details": {}
+    },
+    "E019": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Grace Kim",
+      "phone": "6392609282607",
+      "account": "ACCT2605624",
+      "handle": "@grace.kim949",
+      "details": {}
+    },
+    "E020": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Hugo ElSayed",
+      "phone": "6396361270463",
+      "account": "ACCT6367316",
+      "handle": "@hugo.elsayed135",
+      "details": {}
+    },
+    "E021": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Fischer",
+      "phone": "6396532194961",
+      "account": "ACCT6533330",
+      "handle": "@ava.fischer694",
+      "details": {}
+    },
+    "E022": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Bakker",
+      "phone": "6397929981704",
+      "account": "ACCT7922951",
+      "handle": "@ava.bakker137",
+      "details": {}
+    },
+    "E023": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Jin Kim",
+      "phone": "6399557838174",
+      "account": "ACCT9553159",
+      "handle": "@jin.kim684",
+      "details": {}
+    },
+    "E024": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Hugo ElSayed",
+      "phone": "6397409391855",
+      "account": "ACCT7405088",
+      "handle": "@hugo.elsayed136",
+      "details": {}
+    },
+    "E025": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Hugo Diaz",
+      "phone": "6399185657607",
+      "account": "ACCT9184731",
+      "handle": "@hugo.diaz63",
+      "details": {}
+    },
+    "E026": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E026 -> E062 -> E002 -> E064",
+      "name": "Cara Rossi",
+      "phone": "6398003382376",
+      "account": "ACCT8004203",
+      "handle": "@cara.rossi846",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E026 -> E062 -> E002 -> E064"
+      }
+    },
+    "E027": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Cara Chen",
+      "phone": "6397649808162",
+      "account": "ACCT7644101",
+      "handle": "@cara.chen228",
+      "details": {}
+    },
+    "E028": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Fahad Wei",
+      "phone": "6399784837593",
+      "account": "ACCT9787347",
+      "handle": "@fahad.wei974",
+      "details": {}
+    },
+    "E029": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Sara Patida",
+      "phone": "6398414442657",
+      "account": "ACCT8416161",
+      "handle": "@sara.patida514",
+      "details": {}
+    },
+    "E030": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ben Brooks",
+      "phone": "6396675414514",
+      "account": "ACCT6674630",
+      "handle": "@ben.brooks778",
+      "details": {}
+    },
+    "E031": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Omar Quinn",
+      "phone": "6398715957789",
+      "account": "ACCT8717880",
+      "handle": "@omar.quinn682",
+      "details": {}
+    },
+    "E032": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Unger",
+      "phone": "6395435284390",
+      "account": "ACCT5431093",
+      "handle": "@ava.unger157",
+      "details": {}
+    },
+    "E033": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ben Silva",
+      "phone": "6399574386733",
+      "account": "ACCT9573038",
+      "handle": "@ben.silva381",
+      "details": {}
+    },
+    "E034": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ravi Patida",
+      "phone": "6398934462382",
+      "account": "ACCT8934876",
+      "handle": "@ravi.patida865",
+      "details": {}
+    },
+    "E035": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Cara Patida",
+      "phone": "6395217497479",
+      "account": "ACCT5215239",
+      "handle": "@cara.patida626",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E036": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Chen",
+      "phone": "6395479804436",
+      "account": "ACCT5479127",
+      "handle": "@ava.chen638",
+      "details": {}
+    },
+    "E037": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ana Silva",
+      "phone": "6397367064933",
+      "account": "ACCT7365552",
+      "handle": "@ana.silva971",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E038": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ravi Gomes",
+      "phone": "6399556255842",
+      "account": "ACCT9557328",
+      "handle": "@ravi.gomes210",
+      "details": {}
+    },
+    "E039": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Hugo Yamamoto",
+      "phone": "6393266408591",
+      "account": "ACCT3264429",
+      "handle": "@hugo.yamamoto703",
+      "details": {}
+    },
+    "E040": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Omar Haddad",
+      "phone": "6399203735266",
+      "account": "ACCT9207261",
+      "handle": "@omar.haddad352",
+      "details": {}
+    },
+    "E041": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Uma Lopes",
+      "phone": "6393033209150",
+      "account": "ACCT3039831",
+      "handle": "@uma.lopes357",
+      "details": {}
+    },
+    "E042": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Cara Patida",
+      "phone": "6394845575818",
+      "account": "ACCT4847322",
+      "handle": "@cara.patida277",
+      "details": {}
+    },
+    "E043": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E038 within minutes on 6 episodes",
+      "name": "Zane Carlos",
+      "phone": "6399312680706",
+      "account": "ACCT9311626",
+      "handle": "@zane.carlos991",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E038 within minutes on 6 episodes"
+      }
+    },
+    "E044": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Priya Fischer",
+      "phone": "6393315692874",
+      "account": "ACCT3317749",
+      "handle": "@priya.fischer346",
+      "details": {}
+    },
+    "E045": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Grace Anderson",
+      "phone": "6397458045666",
+      "account": "ACCT7455300",
+      "handle": "@grace.anderson375",
+      "details": {}
+    },
+    "E046": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E006 within minutes on 6 episodes",
+      "name": "Omar Yamamoto",
+      "phone": "6398371348528",
+      "account": "ACCT8373174",
+      "handle": "@omar.yamamoto953",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E006 within minutes on 6 episodes"
+      }
+    },
+    "E047": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Victor Wei",
+      "phone": "6396802275807",
+      "account": "ACCT6805444",
+      "handle": "@victor.wei98",
+      "details": {}
+    },
+    "E048": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Victor Anderson",
+      "phone": "6394119818815",
+      "account": "ACCT4116287",
+      "handle": "@victor.anderson436",
+      "details": {}
+    },
+    "E049": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Victor Jansen",
+      "phone": "6395649439548",
+      "account": "ACCT5649160",
+      "handle": "@victor.jansen312",
+      "details": {}
+    },
+    "E050": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Lena Alvarez",
+      "phone": "6391706882669",
+      "account": "ACCT1708308",
+      "handle": "@lena.alvarez362",
+      "details": {}
+    },
+    "E051": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Grace Duarte",
+      "phone": "6399747969292",
+      "account": "ACCT9742356",
+      "handle": "@grace.duarte868",
+      "details": {}
+    },
+    "E052": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ravi Quinn",
+      "phone": "6399931243581",
+      "account": "ACCT9934309",
+      "handle": "@ravi.quinn912",
+      "details": {}
+    },
+    "E053": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ava Lopes",
+      "phone": "6391266084835",
+      "account": "ACCT1263065",
+      "handle": "@ava.lopes537",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E054": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Grace Diaz",
+      "phone": "6399604560178",
+      "account": "ACCT9603049",
+      "handle": "@grace.diaz964",
+      "details": {}
+    },
+    "E055": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Zane Fischer",
+      "phone": "6398686184555",
+      "account": "ACCT8684301",
+      "handle": "@zane.fischer112",
+      "details": {}
+    },
+    "E056": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Leo Lopes",
+      "phone": "6393346565473",
+      "account": "ACCT3343776",
+      "handle": "@leo.lopes137",
+      "details": {}
+    },
+    "E057": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Sara Fischer",
+      "phone": "6391147867940",
+      "account": "ACCT1149554",
+      "handle": "@sara.fischer145",
+      "details": {}
+    },
+    "E058": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Mara Jansen",
+      "phone": "6398644027781",
+      "account": "ACCT8643776",
+      "handle": "@mara.jansen934",
+      "details": {}
+    },
+    "E059": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ivy Quinn",
+      "phone": "6398482985758",
+      "account": "ACCT8486279",
+      "handle": "@ivy.quinn222",
+      "details": {}
+    },
+    "E060": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Omar Lopes",
+      "phone": "6391378655424",
+      "account": "ACCT1377360",
+      "handle": "@omar.lopes870",
+      "details": {}
+    },
+    "E061": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Elena Kim",
+      "phone": "6392504290158",
+      "account": "ACCT2508932",
+      "handle": "@elena.kim941",
+      "details": {}
+    },
+    "E062": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Diego Tanaka",
+      "phone": "6397689797955",
+      "account": "ACCT7687893",
+      "handle": "@diego.tanaka265",
+      "details": {}
+    },
+    "E063": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Wes Iqbal",
+      "phone": "6398803012681",
+      "account": "ACCT8807288",
+      "handle": "@wes.iqbal174",
+      "details": {}
+    },
+    "E064": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "41 posts on one day all mentioning the same 3 handles",
+      "name": "Wes ElSayed",
+      "phone": "6393542547965",
+      "account": "ACCT3548600",
+      "handle": "@wes.elsayed141",
+      "details": {
+        "type": "post_burst",
+        "note": "41 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E065": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Grace Mehta",
+      "phone": "6395761903026",
+      "account": "ACCT5766046",
+      "handle": "@grace.mehta412",
+      "details": {}
+    },
+    "E066": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Sara Haddad",
+      "phone": "6396607857275",
+      "account": "ACCT6604349",
+      "handle": "@sara.haddad296",
+      "details": {}
+    },
+    "E067": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Noah Rossi",
+      "phone": "6399416884937",
+      "account": "ACCT9419510",
+      "handle": "@noah.rossi221",
+      "details": {}
+    },
+    "E068": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Omar Lopes",
+      "phone": "6396672531950",
+      "account": "ACCT6678123",
+      "handle": "@omar.lopes610",
+      "details": {}
+    },
+    "E069": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Raj Tanaka",
+      "phone": "6396597945868",
+      "account": "ACCT6599441",
+      "handle": "@raj.tanaka520",
+      "details": {}
+    },
+    "E070": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Yara Mehta",
+      "phone": "6393234046675",
+      "account": "ACCT3232467",
+      "handle": "@yara.mehta226",
+      "details": {}
+    },
+    "E071": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Kim",
+      "phone": "6393153356845",
+      "account": "ACCT3153203",
+      "handle": "@ava.kim693",
+      "details": {}
+    },
+    "E072": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "42 posts on one day all mentioning the same 3 handles",
+      "name": "Wes Tanaka",
+      "phone": "6392494702090",
+      "account": "ACCT2498749",
+      "handle": "@wes.tanaka358",
+      "details": {
+        "type": "post_burst",
+        "note": "42 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E073": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Zane Fischer",
+      "phone": "6397162113513",
+      "account": "ACCT7162308",
+      "handle": "@zane.fischer903",
+      "details": {}
+    },
+    "E074": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ivy Gomes",
+      "phone": "6395394023359",
+      "account": "ACCT5391890",
+      "handle": "@ivy.gomes848",
+      "details": {}
+    },
+    "E075": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Omar Haddad",
+      "phone": "6392043127934",
+      "account": "ACCT2048605",
+      "handle": "@omar.haddad375",
+      "details": {}
+    },
+    "E076": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Kai Haddad",
+      "phone": "6399476716443",
+      "account": "ACCT9478047",
+      "handle": "@kai.haddad897",
+      "details": {}
+    },
+    "E077": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Hugo Wei",
+      "phone": "6397967635013",
+      "account": "ACCT7965777",
+      "handle": "@hugo.wei462",
+      "details": {}
+    },
+    "E078": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Silva",
+      "phone": "6398118063369",
+      "account": "ACCT8119982",
+      "handle": "@ava.silva729",
+      "details": {}
+    },
+    "E079": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Jin Duarte",
+      "phone": "6394637844577",
+      "account": "ACCT4633776",
+      "handle": "@jin.duarte960",
+      "details": {}
+    },
+    "E080": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~517,822) then zero activity thereafter",
+      "name": "Wes Haddad",
+      "phone": "6395031625358",
+      "account": "ACCT5032626",
+      "handle": "@wes.haddad90",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~517,822) then zero activity thereafter"
+      }
+    },
+    "E081": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ben Lopes",
+      "phone": "6395037085860",
+      "account": "ACCT5038758",
+      "handle": "@ben.lopes102",
+      "details": {}
+    },
+    "E082": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Lena Carlos",
+      "phone": "6394685522498",
+      "account": "ACCT4681235",
+      "handle": "@lena.carlos233",
+      "details": {}
+    },
+    "E083": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ravi Haddad",
+      "phone": "6395977492986",
+      "account": "ACCT5975636",
+      "handle": "@ravi.haddad132",
+      "details": {}
+    },
+    "E084": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Yara Brooks",
+      "phone": "6398994380480",
+      "account": "ACCT8992057",
+      "handle": "@yara.brooks57",
+      "details": {}
+    },
+    "E085": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Priya Anderson",
+      "phone": "6392941398211",
+      "account": "ACCT2947160",
+      "handle": "@priya.anderson318",
+      "details": {}
+    },
+    "E086": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ava Zhou",
+      "phone": "6392884317960",
+      "account": "ACCT2883410",
+      "handle": "@ava.zhou355",
+      "details": {}
+    },
+    "E087": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ravi Haddad",
+      "phone": "6396608726142",
+      "account": "ACCT6601939",
+      "handle": "@ravi.haddad239",
+      "details": {}
+    },
+    "E088": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Fahad Iqbal",
+      "phone": "6393506646139",
+      "account": "ACCT3505606",
+      "handle": "@fahad.iqbal488",
+      "details": {}
+    },
+    "E089": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Tomas Okafor",
+      "phone": "6392988507662",
+      "account": "ACCT2985935",
+      "handle": "@tomas.okafor682",
+      "details": {}
+    },
+    "E090": {
+      "person_type": "background",
+      "storyline": "",
+      "note": "",
+      "name": "Ravi Okafor",
+      "phone": "6392564576295",
+      "account": "ACCT2564896",
+      "handle": "@ravi.okafor326",
+      "details": {}
+    },
+    "E091": {
+      "person_type": "storyline",
+      "storyline": "colocation",
+      "note": "call then transfer to E051 within minutes on 6 episodes",
+      "name": "Kai Unger",
+      "phone": "6394866338723",
+      "account": "ACCT4863629",
+      "handle": "@kai.unger225",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E051 within minutes on 6 episodes"
+      }
+    },
+    "E092": {
+      "person_type": "storyline",
+      "storyline": "colocation",
+      "note": "call then transfer to E067 within minutes on 6 episodes",
+      "name": "Omar Anderson",
+      "phone": "6399654846240",
+      "account": "ACCT9659374",
+      "handle": "@omar.anderson794",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E067 within minutes on 6 episodes"
+      }
+    },
+    "E093": {
+      "person_type": "storyline",
+      "storyline": "colocation",
+      "note": "call then transfer to E056 within minutes on 6 episodes",
+      "name": "Leo Jansen",
+      "phone": "6398301145798",
+      "account": "ACCT8309607",
+      "handle": "@leo.jansen550",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E056 within minutes on 6 episodes"
+      }
+    },
+    "E094": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Uma Brooks",
+      "phone": "6396451058953",
+      "account": "ACCT6457780",
+      "handle": "@uma.brooks626",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E095": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Omar Jansen",
+      "phone": "6391806739618",
+      "account": "ACCT1804350",
+      "handle": "@omar.jansen218",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E096": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Xin Alvarez",
+      "phone": "6396829193825",
+      "account": "ACCT6826646",
+      "handle": "@xin.alvarez332",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E097": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Hugo Unger",
+      "phone": "6392083646281",
+      "account": "ACCT2083577",
+      "handle": "@hugo.unger163",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E098": {
+      "person_type": "storyline",
+      "storyline": "structuring",
+      "note": "53 deposits clustered just under 10,000",
+      "name": "Ava Okafor",
+      "phone": "6391583705922",
+      "account": "ACCT1586585",
+      "handle": "@ava.okafor988",
+      "details": {
+        "type": "structuring",
+        "note": "53 deposits clustered just under 10,000"
+      }
+    },
+    "E099": {
+      "person_type": "storyline",
+      "storyline": "structuring",
+      "note": "55 deposits clustered just under 10,000",
+      "name": "Noah Diaz",
+      "phone": "6399552292502",
+      "account": "ACCT9559183",
+      "handle": "@noah.diaz379",
+      "details": {
+        "type": "structuring",
+        "note": "55 deposits clustered just under 10,000"
+      }
+    },
+    "E100": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Wes Lopes",
+      "phone": "6394093560048",
+      "account": "ACCT4094760",
+      "handle": "@wes.lopes133",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E101": {
+      "person_type": "storyline",
+      "storyline": "fan_io",
+      "note": "fan-in from 9 senders then fan-out to 9 in ~3 days",
+      "name": "Xin Lopes",
+      "phone": "6394804219253",
+      "account": "ACCT4807444",
+      "handle": "@xin.lopes907",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 9 senders then fan-out to 9 in ~3 days"
+      }
+    },
+    "E102": {
+      "person_type": "storyline",
+      "storyline": "colocation",
+      "note": "call then transfer to E020 within minutes on 6 episodes",
+      "name": "Nia Silva",
+      "phone": "6391117518123",
+      "account": "ACCT1119003",
+      "handle": "@nia.silva632",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E020 within minutes on 6 episodes"
+      }
+    },
+    "E103": {
+      "person_type": "storyline",
+      "storyline": "silence",
+      "note": "large debit (~520,180) then zero activity thereafter",
+      "name": "Diego Mehta",
+      "phone": "6398324845497",
+      "account": "ACCT8329483",
+      "handle": "@diego.mehta291",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~520,180) then zero activity thereafter"
+      }
+    },
+    "E104": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Jin Iqbal",
+      "phone": "6398521420953",
+      "account": "ACCT8523153",
+      "handle": "@jin.iqbal301",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E105": {
+      "person_type": "storyline",
+      "storyline": "silence",
+      "note": "large debit (~295,896) then zero activity thereafter",
+      "name": "Zane Yamamoto",
+      "phone": "6394947963849",
+      "account": "ACCT4943953",
+      "handle": "@zane.yamamoto508",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~295,896) then zero activity thereafter"
+      }
+    },
+    "E106": {
+      "person_type": "storyline",
+      "storyline": "colocation",
+      "note": "call then transfer to E100 within minutes on 6 episodes",
+      "name": "Leo Zhou",
+      "phone": "6397337896464",
+      "account": "ACCT7333236",
+      "handle": "@leo.zhou356",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E100 within minutes on 6 episodes"
+      }
+    },
+    "E107": {
+      "person_type": "storyline",
+      "storyline": "chain",
+      "note": "3-hop layering E107 -> E066 -> E013 -> E108",
+      "name": "Uma Novak",
+      "phone": "6392811862101",
+      "account": "ACCT2815339",
+      "handle": "@uma.novak804",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E107 -> E066 -> E013 -> E108"
+      }
+    },
+    "E108": {
+      "person_type": "storyline",
+      "storyline": "colocation",
+      "note": "call then transfer to E001 within minutes on 6 episodes",
+      "name": "Fahad Silva",
+      "phone": "6399519665461",
+      "account": "ACCT9515779",
+      "handle": "@fahad.silva346",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E001 within minutes on 6 episodes"
+      }
+    },
+    "E109": {
+      "person_type": "storyline",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Hugo Haddad",
+      "phone": "6391081985053",
+      "account": "ACCT1083454",
+      "handle": "@hugo.haddad793",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E110": {
+      "person_type": "storyline",
+      "storyline": "post_burst",
+      "note": "35 posts on one day all mentioning the same 3 handles",
+      "name": "Ivy Duarte",
+      "phone": "6391903235757",
+      "account": "ACCT1909745",
+      "handle": "@ivy.duarte574",
+      "details": {
+        "type": "post_burst",
+        "note": "35 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E111": {
+      "person_type": "storyline",
+      "storyline": "post_burst",
+      "note": "43 posts on one day all mentioning the same 3 handles",
+      "name": "Xin Patida",
+      "phone": "6392073023678",
+      "account": "ACCT2076852",
+      "handle": "@xin.patida514",
+      "details": {
+        "type": "post_burst",
+        "note": "43 posts on one day all mentioning the same 3 handles"
+      }
+    }
+  },
+  "meta": {
+    "threshold": 10000.0
+  }
+}

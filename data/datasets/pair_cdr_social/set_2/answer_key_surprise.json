@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E025": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E044 within minutes on 6 episodes",
+      "name": "Elena Silva",
+      "phone": "6397473500175",
+      "account": "ACCT7479130",
+      "handle": "@elena.silva213",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E044 within minutes on 6 episodes"
+      }
+    },
+    "E052": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E087 within minutes on 6 episodes",
+      "name": "Jin Carlos",
+      "phone": "6394573060920",
+      "account": "ACCT4571592",
+      "handle": "@jin.carlos938",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E087 within minutes on 6 episodes"
+      }
+    },
+    "E083": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E028 within minutes on 6 episodes",
+      "name": "Cara Bakker",
+      "phone": "6393062613059",
+      "account": "ACCT3067059",
+      "handle": "@cara.bakker365",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E028 within minutes on 6 episodes"
+      }
+    },
+    "E063": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E034 within minutes on 6 episodes",
+      "name": "Ravi Gomes",
+      "phone": "6399836144770",
+      "account": "ACCT9836229",
+      "handle": "@ravi.gomes132",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E034 within minutes on 6 episodes"
+      }
+    },
+    "E028": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E023 within minutes on 6 episodes",
+      "name": "Noah Diaz",
+      "phone": "6397172010892",
+      "account": "ACCT7177604",
+      "handle": "@noah.diaz952",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E023 within minutes on 6 episodes"
+      }
+    },
+    "E044": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "34 posts on one day all mentioning the same 3 handles",
+      "name": "Kai Rossi",
+      "phone": "6399085717386",
+      "account": "ACCT9089619",
+      "handle": "@kai.rossi469",
+      "details": {
+        "type": "post_burst",
+        "note": "34 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E079": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "58 deposits clustered just under 10,000",
+      "name": "Ava Duarte",
+      "phone": "6395958977897",
+      "account": "ACCT5959069",
+      "handle": "@ava.duarte434",
+      "details": {
+        "type": "structuring",
+        "note": "58 deposits clustered just under 10,000"
+      }
+    },
+    "E086": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "42 posts on one day all mentioning the same 3 handles",
+      "name": "Sara Chen",
+      "phone": "6397473530031",
+      "account": "ACCT7474376",
+      "handle": "@sara.chen609",
+      "details": {
+        "type": "post_burst",
+        "note": "42 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E004": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~696,560) then zero activity thereafter",
+      "name": "Tomas ElSayed",
+      "phone": "6391494838799",
+      "account": "ACCT1496402",
+      "handle": "@tomas.elsayed790",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~696,560) then zero activity thereafter"
+      }
+    },
+    "E066": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "37 posts on one day all mentioning the same 3 handles",
+      "name": "Mara Kim",
+      "phone": "6398415249661",
+      "account": "ACCT8417665",
+      "handle": "@mara.kim138",
+      "details": {
+        "type": "post_burst",
+        "note": "37 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E007": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "57 deposits clustered just under 10,000",
+      "name": "Ben Bakker",
+      "phone": "6396447956284",
+      "account": "ACCT6448601",
+      "handle": "@ben.bakker844",
+      "details": {
+        "type": "structuring",
+        "note": "57 deposits clustered just under 10,000"
+      }
+    },
+    "E019": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E029 within minutes on 6 episodes",
+      "name": "Priya Alvarez",
+      "phone": "6391392356697",
+      "account": "ACCT1395196",
+      "handle": "@priya.alvarez831",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E029 within minutes on 6 episodes"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1159
+  }
+}

@@ -11,7 +11,34 @@ import numpy as np
 import pandas as pd
 
 from .population import Person, PersonRegistry, make_person, normal_bank_events, normal_cdr_events, normal_social_events
-from .storylines import STORYLINE_FACTORIES, STORYLINE_POOL, apply_storyline
+from .storylines import STORYLINE_FACTORIES, STORYLINE_POOL, STORYLINE_SOURCES, compatible_storylines, apply_storyline
+
+# ---------------------------------------------------------------------------
+# Cross-source correlation modes. "full" = everyone appears in all three
+# sources (the original scenario). "none" = three disjoint populations, one
+# per source. "pair_*" = one population shares the two named sources while a
+# second population only appears in the remaining source.
+# ---------------------------------------------------------------------------
+CORRELATION_MODES = ("full", "none", "pair_bank_cdr", "pair_bank_social",
+                     "pair_cdr_social")
+PAIR_SOURCES = {
+    "pair_bank_cdr": {"bank", "cdr"},
+    "pair_bank_social": {"bank", "social"},
+    "pair_cdr_social": {"cdr", "social"},
+}
+_SOURCES = {"bank", "cdr", "social"}
+
+
+def _assign_sources(correlation: str, rng: random.Random) -> set:
+    """Which sources a newly created person participates in."""
+    if correlation == "full":
+        return set(_SOURCES)
+    if correlation == "none":
+        return {rng.choice(("bank", "cdr", "social"))}
+    pair = PAIR_SOURCES[correlation]
+    if rng.random() < 0.7:
+        return set(pair)
+    return set(_SOURCES - pair)
 
 # ---------------------------------------------------------------------------
 # Header templates per source: exercise Stage A dynamic schema detection
@@ -46,6 +73,22 @@ SOCIAL_HEADERS = {
 
 NOISE_COLUMNS = ["batch_id", "device", "notes"]
 
+# possible emitted column names carrying the person's name, per source
+# (the generator renames headers to hostile variants to exercise Stage A)
+NAME_COLUMN_CANDIDATES = {
+    "bank": sorted({v["name"] for v in BANK_HEADERS.values()}),
+    "cdr": sorted({v["name"] for v in CDR_HEADERS.values()}),
+    "social": sorted({v["name"] for v in SOCIAL_HEADERS.values()}),
+}
+
+
+def name_column(df: pd.DataFrame, source: str) -> str:
+    """Which of the emitted name columns this dataframe actually uses."""
+    for cand in NAME_COLUMN_CANDIDATES.get(source, ["name"]):
+        if cand in df.columns:
+            return cand
+    return "name"
+
 
 def _write_csv(df: pd.DataFrame, path: Path, header_map: Dict[str, str], extra: str = "") -> None:
     ren = {k: v for k, v in header_map.items() if k in df.columns}
@@ -76,12 +119,14 @@ def generate_all(
     n_per_storyline: int = 3,
     n_surprise: int = 12,
     threshold: float = 10000.0,
+    correlation: str = "full",
 ) -> Dict[str, Path]:
     files = {}
     scenario = build_scenario(seed=seed, surprise_seed=surprise_seed,
                               n_background=n_background,
                               n_per_storyline=n_per_storyline,
-                              n_surprise=n_surprise, threshold=threshold)
+                              n_surprise=n_surprise, threshold=threshold,
+                              correlation=correlation)
     bank_rows, cdr_rows, social_rows = scenario["bank_rows"], scenario["cdr_rows"], scenario["social_rows"]
     annotations = scenario["annotations"]
     surprise_ids = scenario["surprise_ids"]
@@ -122,6 +167,7 @@ def build_scenario(
     n_per_storyline: int = 3,
     n_surprise: int = 12,
     threshold: float = 10000.0,
+    correlation: str = "full",
 ) -> Dict:
     """Deterministic people + events + annotations (the joint fact sheet).
 
@@ -129,7 +175,12 @@ def build_scenario(
     JSONL streams, free-form logs) rendered from this sheet are identical in
     entity identity and storylines — so any two formats must evaluate to the
     same recall if the dynamic extractor is working.
+
+    ``correlation`` controls cross-source correlation: "full" (everyone in
+    all three sources), "none" (disjoint per-source populations) or
+    "pair_*" (two correlated sources + a third independent one).
     """
+    assert correlation in CORRELATION_MODES, correlation
     rng = random.Random(seed)
     sng = random.Random(surprise_seed)
 
@@ -142,6 +193,7 @@ def build_scenario(
         pid += 1
         p._is_scripted = False
         p._is_surprise = False
+        p._sources = _assign_sources(correlation, rng)
         people[p.person_id] = p
     # friendship edges within background (small-world so network model has signal)
     bg_ids = list(people.keys())
@@ -158,6 +210,7 @@ def build_scenario(
             pid += 1
             p._is_scripted = story
             p._is_surprise = False
+            p._sources = _assign_sources(correlation, rng)
             people[p.person_id] = p
     for p in people.values():
         if not p._is_scripted:
@@ -174,32 +227,46 @@ def build_scenario(
     # --- generate events -----------------------------------------------------------
     event_holder: Dict[str, Dict[str, List[dict]]] = {}
     for p in people.values():
-        normal = {
-            "bank": normal_bank_events(registry, p, rng),
-            "cdr": normal_cdr_events(registry, p, rng),
-            "social": normal_social_events(registry, p, rng),
-        }
+        normal: Dict[str, List[dict]] = {}
+        if "bank" in p._sources:
+            normal["bank"] = normal_bank_events(registry, p, rng)
+        if "cdr" in p._sources:
+            normal["cdr"] = normal_cdr_events(registry, p, rng)
+        if "social" in p._sources:
+            normal["social"] = normal_social_events(registry, p, rng)
         p._events = normal
         event_holder[p.person_id] = normal
         annotations[p.person_id] = _annotate(p, "background", "", "", {})
 
+    def _apply(p, rng_, story):
+        """Apply a storyline, then drop events outside the person's sources."""
+        events, ann = apply_storyline(p, registry, rng_, p._events, story)
+        events = {s: evs for s, evs in events.items() if s in p._sources}
+        if not any(events.values()):
+            story = rng_.choice(compatible_storylines(p._sources))
+            events, ann = apply_storyline(p, registry, rng_, p._events, story)
+            events = {s: evs for s, evs in events.items() if s in p._sources}
+        p._events = events
+        event_holder[p.person_id] = events
+        return story, ann
+
     # scripted storylines
     for p in people.values():
         if p._is_scripted:
-            storyline = p._is_scripted
-            events, ann = apply_storyline(p, registry, rng, p._events, storyline)
-            p._events = events
-            event_holder[p.person_id] = events
-            annotations[p.person_id] = _annotate(p, "storyline", storyline, ann["note"], ann)
+            story = p._is_scripted
+            if story not in compatible_storylines(p._sources):
+                story = rng.choice(compatible_storylines(p._sources))
+            story, ann = _apply(p, rng, story)
+            annotations[p.person_id] = _annotate(p, "storyline", story, ann["note"], ann)
 
     # surprise storylines (randomized)
     for pid_ in surprise_ids:
         p = people[pid_]
-        storyline = sng.choice(STORYLINE_POOL)
-        events, ann = apply_storyline(p, registry, sng, p._events, storyline)
-        p._events = events
-        event_holder[p.person_id] = events
-        annotations[p.person_id] = _annotate(p, "surprise", storyline, ann["note"], ann)
+        story = sng.choice(STORYLINE_POOL)
+        if story not in compatible_storylines(p._sources):
+            story = sng.choice(compatible_storylines(p._sources))
+        story, ann = _apply(p, sng, story)
+        annotations[p.person_id] = _annotate(p, "surprise", story, ann["note"], ann)
 
     bank_rows, cdr_rows, social_rows = [], [], []
     for p in people.values():
@@ -215,6 +282,7 @@ def build_scenario(
         "people": people,
         "annotations": annotations,
         "surprise_ids": surprise_ids,
+        "person_sources": {pid_: set(p._sources) for pid_, p in people.items()},
         "bank_rows": pd.DataFrame(bank_rows),
         "cdr_rows": pd.DataFrame(cdr_rows),
         "social_rows": pd.DataFrame(social_rows),

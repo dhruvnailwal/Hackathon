@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E006": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E001 within minutes on 6 episodes",
+      "name": "Noah Patida",
+      "phone": "6399217612259",
+      "account": "ACCT9218210",
+      "handle": "@noah.patida179",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E001 within minutes on 6 episodes"
+      }
+    },
+    "E014": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E028 within minutes on 6 episodes",
+      "name": "Wes Patida",
+      "phone": "6397191641516",
+      "account": "ACCT7191124",
+      "handle": "@wes.patida440",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E028 within minutes on 6 episodes"
+      }
+    },
+    "E077": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E022 within minutes on 6 episodes",
+      "name": "Sara Brooks",
+      "phone": "6399274247812",
+      "account": "ACCT9279149",
+      "handle": "@sara.brooks949",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E022 within minutes on 6 episodes"
+      }
+    },
+    "E013": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E102 within minutes on 6 episodes",
+      "name": "Grace Iqbal",
+      "phone": "6399689810345",
+      "account": "ACCT9681453",
+      "handle": "@grace.iqbal210",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E102 within minutes on 6 episodes"
+      }
+    },
+    "E031": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 8 senders then fan-out to 13 in ~3 days",
+      "name": "Ana Brooks",
+      "phone": "6392611429776",
+      "account": "ACCT2617677",
+      "handle": "@ana.brooks407",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 8 senders then fan-out to 13 in ~3 days"
+      }
+    },
+    "E075": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Raj Gomes",
+      "phone": "6391432673276",
+      "account": "ACCT1431532",
+      "handle": "@raj.gomes97",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E001": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E101 within minutes on 6 episodes",
+      "name": "Noah Duarte",
+      "phone": "6398369537301",
+      "account": "ACCT8364077",
+      "handle": "@noah.duarte801",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E101 within minutes on 6 episodes"
+      }
+    },
+    "E054": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Nia Quinn",
+      "phone": "6395685634735",
+      "account": "ACCT5686681",
+      "handle": "@nia.quinn974",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E088": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "47 posts on one day all mentioning the same 3 handles",
+      "name": "Elena Gomes",
+      "phone": "6391285702930",
+      "account": "ACCT1281990",
+      "handle": "@elena.gomes918",
+      "details": {
+        "type": "post_burst",
+        "note": "47 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E090": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~286,204) then zero activity thereafter",
+      "name": "Leo Jansen",
+      "phone": "6395763179559",
+      "account": "ACCT5765241",
+      "handle": "@leo.jansen315",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~286,204) then zero activity thereafter"
+      }
+    },
+    "E084": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Grace Lopes",
+      "phone": "6396101646616",
+      "account": "ACCT6109500",
+      "handle": "@grace.lopes402",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E033": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E033 -> E054 -> E047 -> E049",
+      "name": "Leo Wei",
+      "phone": "6393027868749",
+      "account": "ACCT3021566",
+      "handle": "@leo.wei432",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E033 -> E054 -> E047 -> E049"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1059
+  }
+}

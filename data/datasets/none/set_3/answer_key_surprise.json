@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E071": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "47 posts on one day all mentioning the same 3 handles",
+      "name": "Sara Jansen",
+      "phone": "6395636027350",
+      "account": "ACCT5636521",
+      "handle": "@sara.jansen702",
+      "details": {
+        "type": "post_burst",
+        "note": "47 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E016": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "44 deposits clustered just under 10,000",
+      "name": "Ana Fischer",
+      "phone": "6396245639356",
+      "account": "ACCT6247087",
+      "handle": "@ana.fischer912",
+      "details": {
+        "type": "structuring",
+        "note": "44 deposits clustered just under 10,000"
+      }
+    },
+    "E015": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "37 posts on one day all mentioning the same 3 handles",
+      "name": "Hugo Tanaka",
+      "phone": "6393185111211",
+      "account": "ACCT3187401",
+      "handle": "@hugo.tanaka258",
+      "details": {
+        "type": "post_burst",
+        "note": "37 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E070": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "35 posts on one day all mentioning the same 3 handles",
+      "name": "Fahad Yamamoto",
+      "phone": "6399867070365",
+      "account": "ACCT9867933",
+      "handle": "@fahad.yamamoto219",
+      "details": {
+        "type": "post_burst",
+        "note": "35 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E057": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "41 posts on one day all mentioning the same 3 handles",
+      "name": "Lena Fischer",
+      "phone": "6391168696025",
+      "account": "ACCT1166397",
+      "handle": "@lena.fischer538",
+      "details": {
+        "type": "post_burst",
+        "note": "41 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E055": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Leo Iqbal",
+      "phone": "6399876870395",
+      "account": "ACCT9871448",
+      "handle": "@leo.iqbal959",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E036": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E109 within minutes on 6 episodes",
+      "name": "Raj Zhou",
+      "phone": "6391291841126",
+      "account": "ACCT1294464",
+      "handle": "@raj.zhou315",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E109 within minutes on 6 episodes"
+      }
+    },
+    "E046": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E054 within minutes on 6 episodes",
+      "name": "Ava Tanaka",
+      "phone": "6391087297209",
+      "account": "ACCT1088441",
+      "handle": "@ava.tanaka599",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E054 within minutes on 6 episodes"
+      }
+    },
+    "E074": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~205,131) then zero activity thereafter",
+      "name": "Ava Unger",
+      "phone": "6397691595699",
+      "account": "ACCT7698272",
+      "handle": "@ava.unger951",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~205,131) then zero activity thereafter"
+      }
+    },
+    "E009": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E009 -> E090 -> E059 -> E057",
+      "name": "Hugo Wei",
+      "phone": "6393871567546",
+      "account": "ACCT3872103",
+      "handle": "@hugo.wei740",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E009 -> E090 -> E059 -> E057"
+      }
+    },
+    "E040": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~575,195) then zero activity thereafter",
+      "name": "Wes Yamamoto",
+      "phone": "6398537236668",
+      "account": "ACCT8532073",
+      "handle": "@wes.yamamoto726",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~575,195) then zero activity thereafter"
+      }
+    },
+    "E081": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~663,158) then zero activity thereafter",
+      "name": "Mara Gomes",
+      "phone": "6394966107671",
+      "account": "ACCT4969605",
+      "handle": "@mara.gomes476",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~663,158) then zero activity thereafter"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1256
+  }
+}

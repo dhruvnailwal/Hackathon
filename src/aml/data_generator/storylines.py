@@ -181,6 +181,30 @@ def storyline_chain(person, registry, rng, normal):
     }
 
 
+# ---------------------------------------------------------------------------
+# storyline 7: post_burst — a day of dozens of posts all mentioning the same
+# handles, so social-only entities still carry a detectable signal.
+# ---------------------------------------------------------------------------
+def storyline_post_burst(person, registry, rng, normal):
+    social = list(normal.get("social", []))
+    day = rng.randint(2, 15)
+    handles = [registry.random_person(person.person_id).handle for _ in range(3)]
+    geo = f"LAT{rng.randint(1000, 2000)}"
+    for _ in range(rng.randint(20, 30)):
+        social.append({
+            "pid": person.person_id,
+            "ts": _ts(rng, day, hour_bias=10),
+            "handle": person.handle,
+            "mentions": ",".join(handles),
+            "geo": geo,
+            "name": person.name,
+        })
+    return {"social": social}, {
+        "type": "post_burst",
+        "note": f"{len(social)} posts on one day all mentioning the same {len(handles)} handles",
+    }
+
+
 STORYLINE_FACTORIES: Dict[str, Callable] = {
     "colocation": storyline_colocation,
     "dormant_flip": storyline_dormant_flip,
@@ -188,9 +212,27 @@ STORYLINE_FACTORIES: Dict[str, Callable] = {
     "fan_io": storyline_fan_io,
     "silence": storyline_silence,
     "chain": storyline_chain,
+    "post_burst": storyline_post_burst,
 }
 
 STORYLINE_POOL = list(STORYLINE_FACTORIES.keys())
+
+# which sources each storyline writes events into (used to keep anomaly
+# signals inside the sources a person actually participates in)
+STORYLINE_SOURCES: Dict[str, set] = {
+    "colocation": {"bank", "cdr"},
+    "dormant_flip": {"bank", "cdr"},
+    "structuring": {"bank"},
+    "fan_io": {"bank"},
+    "silence": {"bank"},
+    "chain": {"bank"},
+    "post_burst": {"social"},
+}
+
+
+def compatible_storylines(sources) -> List[str]:
+    """Storylines that create events in at least one of the given sources."""
+    return [s for s in STORYLINE_POOL if STORYLINE_SOURCES[s] & set(sources)]
 
 
 def apply_storyline(person, registry, rng, normal, storyline: str):

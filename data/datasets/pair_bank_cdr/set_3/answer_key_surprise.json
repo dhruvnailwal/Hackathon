@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E066": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E073 within minutes on 6 episodes",
+      "name": "Ravi Brooks",
+      "phone": "6397824245575",
+      "account": "ACCT7826071",
+      "handle": "@ravi.brooks747",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E073 within minutes on 6 episodes"
+      }
+    },
+    "E051": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E034 within minutes on 6 episodes",
+      "name": "Mara Fischer",
+      "phone": "6397225981818",
+      "account": "ACCT7225058",
+      "handle": "@mara.fischer674",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E034 within minutes on 6 episodes"
+      }
+    },
+    "E026": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "42 posts on one day all mentioning the same 3 handles",
+      "name": "Noah Novak",
+      "phone": "6393672564370",
+      "account": "ACCT3672052",
+      "handle": "@noah.novak431",
+      "details": {
+        "type": "post_burst",
+        "note": "42 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E045": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "43 deposits clustered just under 10,000",
+      "name": "Fahad Anderson",
+      "phone": "6396427759971",
+      "account": "ACCT6427116",
+      "handle": "@fahad.anderson778",
+      "details": {
+        "type": "structuring",
+        "note": "43 deposits clustered just under 10,000"
+      }
+    },
+    "E032": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~286,666) then zero activity thereafter",
+      "name": "Xin Anderson",
+      "phone": "6394477742730",
+      "account": "ACCT4476399",
+      "handle": "@xin.anderson410",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~286,666) then zero activity thereafter"
+      }
+    },
+    "E062": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E062 -> E049 -> E045 -> E069",
+      "name": "Priya Bakker",
+      "phone": "6397648634230",
+      "account": "ACCT7644329",
+      "handle": "@priya.bakker998",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E062 -> E049 -> E045 -> E069"
+      }
+    },
+    "E080": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E059 within minutes on 6 episodes",
+      "name": "Kai Haddad",
+      "phone": "6396286952283",
+      "account": "ACCT6281833",
+      "handle": "@kai.haddad972",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E059 within minutes on 6 episodes"
+      }
+    },
+    "E048": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "36 posts on one day all mentioning the same 3 handles",
+      "name": "Noah Mehta",
+      "phone": "6399674447677",
+      "account": "ACCT9679554",
+      "handle": "@noah.mehta419",
+      "details": {
+        "type": "post_burst",
+        "note": "36 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E087": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Noah Gomes",
+      "phone": "6392144813228",
+      "account": "ACCT2144311",
+      "handle": "@noah.gomes436",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E040": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "39 posts on one day all mentioning the same 3 handles",
+      "name": "Ava Iqbal",
+      "phone": "6393137964621",
+      "account": "ACCT3137427",
+      "handle": "@ava.iqbal370",
+      "details": {
+        "type": "post_burst",
+        "note": "39 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E081": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "44 posts on one day all mentioning the same 3 handles",
+      "name": "Diego Meyer",
+      "phone": "6395386690983",
+      "account": "ACCT5385514",
+      "handle": "@diego.meyer692",
+      "details": {
+        "type": "post_burst",
+        "note": "44 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E084": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "45 posts on one day all mentioning the same 3 handles",
+      "name": "Grace Mehta",
+      "phone": "6394219403986",
+      "account": "ACCT4211845",
+      "handle": "@grace.mehta440",
+      "details": {
+        "type": "post_burst",
+        "note": "45 posts on one day all mentioning the same 3 handles"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1257
+  }
+}

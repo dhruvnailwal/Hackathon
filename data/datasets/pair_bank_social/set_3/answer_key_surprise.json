@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E018": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E060 within minutes on 6 episodes",
+      "name": "Raj ElSayed",
+      "phone": "6398963003099",
+      "account": "ACCT8965664",
+      "handle": "@raj.elsayed334",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E060 within minutes on 6 episodes"
+      }
+    },
+    "E048": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "45 deposits clustered just under 10,000",
+      "name": "Victor ElSayed",
+      "phone": "6391403482727",
+      "account": "ACCT1406857",
+      "handle": "@victor.elsayed168",
+      "details": {
+        "type": "structuring",
+        "note": "45 deposits clustered just under 10,000"
+      }
+    },
+    "E060": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 9 senders then fan-out to 14 in ~3 days",
+      "name": "Ava Quinn",
+      "phone": "6393976224276",
+      "account": "ACCT3976221",
+      "handle": "@ava.quinn567",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 9 senders then fan-out to 14 in ~3 days"
+      }
+    },
+    "E043": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 14 senders then fan-out to 9 in ~3 days",
+      "name": "Noah Kim",
+      "phone": "6393738330270",
+      "account": "ACCT3739123",
+      "handle": "@noah.kim614",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 14 senders then fan-out to 9 in ~3 days"
+      }
+    },
+    "E021": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Wes Meyer",
+      "phone": "6397765123023",
+      "account": "ACCT7765413",
+      "handle": "@wes.meyer466",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E077": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E003 within minutes on 6 episodes",
+      "name": "Omar Bakker",
+      "phone": "6397861804817",
+      "account": "ACCT7861096",
+      "handle": "@omar.bakker123",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E003 within minutes on 6 episodes"
+      }
+    },
+    "E067": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "46 deposits clustered just under 10,000",
+      "name": "Diego Meyer",
+      "phone": "6399628104929",
+      "account": "ACCT9621921",
+      "handle": "@diego.meyer513",
+      "details": {
+        "type": "structuring",
+        "note": "46 deposits clustered just under 10,000"
+      }
+    },
+    "E075": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "49 deposits clustered just under 10,000",
+      "name": "Ivy Carlos",
+      "phone": "6396606109339",
+      "account": "ACCT6603842",
+      "handle": "@ivy.carlos773",
+      "details": {
+        "type": "structuring",
+        "note": "49 deposits clustered just under 10,000"
+      }
+    },
+    "E073": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Wes Alvarez",
+      "phone": "6397091733962",
+      "account": "ACCT7095666",
+      "handle": "@wes.alvarez101",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E047": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E020 within minutes on 6 episodes",
+      "name": "Tomas Rossi",
+      "phone": "6393679419674",
+      "account": "ACCT3676017",
+      "handle": "@tomas.rossi568",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E020 within minutes on 6 episodes"
+      }
+    },
+    "E053": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ava Unger",
+      "phone": "6395115655645",
+      "account": "ACCT5119888",
+      "handle": "@ava.unger353",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E066": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 9 senders then fan-out to 12 in ~3 days",
+      "name": "Zane Gomes",
+      "phone": "6397655603474",
+      "account": "ACCT7656183",
+      "handle": "@zane.gomes324",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 9 senders then fan-out to 12 in ~3 days"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1258
+  }
+}

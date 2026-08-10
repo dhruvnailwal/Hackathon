@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E025": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "50 deposits clustered just under 10,000",
+      "name": "Nia Fischer",
+      "phone": "6398248937708",
+      "account": "ACCT8248646",
+      "handle": "@nia.fischer829",
+      "details": {
+        "type": "structuring",
+        "note": "50 deposits clustered just under 10,000"
+      }
+    },
+    "E070": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Fahad Tanaka",
+      "phone": "6392074687020",
+      "account": "ACCT2075659",
+      "handle": "@fahad.tanaka657",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E037": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E024 within minutes on 6 episodes",
+      "name": "Yara Alvarez",
+      "phone": "6396698858617",
+      "account": "ACCT6696915",
+      "handle": "@yara.alvarez915",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E024 within minutes on 6 episodes"
+      }
+    },
+    "E028": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E077 within minutes on 6 episodes",
+      "name": "Lena Quinn",
+      "phone": "6391919342781",
+      "account": "ACCT1913533",
+      "handle": "@lena.quinn952",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E077 within minutes on 6 episodes"
+      }
+    },
+    "E031": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "61 deposits clustered just under 10,000",
+      "name": "Yara Brooks",
+      "phone": "6399006034289",
+      "account": "ACCT9006815",
+      "handle": "@yara.brooks512",
+      "details": {
+        "type": "structuring",
+        "note": "61 deposits clustered just under 10,000"
+      }
+    },
+    "E009": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "46 deposits clustered just under 10,000",
+      "name": "Nia Mehta",
+      "phone": "6395376879663",
+      "account": "ACCT5378984",
+      "handle": "@nia.mehta650",
+      "details": {
+        "type": "structuring",
+        "note": "46 deposits clustered just under 10,000"
+      }
+    },
+    "E003": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 14 senders then fan-out to 10 in ~3 days",
+      "name": "Sara Brooks",
+      "phone": "6394767670480",
+      "account": "ACCT4765824",
+      "handle": "@sara.brooks888",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 14 senders then fan-out to 10 in ~3 days"
+      }
+    },
+    "E005": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "49 posts on one day all mentioning the same 3 handles",
+      "name": "Grace Silva",
+      "phone": "6391129427504",
+      "account": "ACCT1122706",
+      "handle": "@grace.silva286",
+      "details": {
+        "type": "post_burst",
+        "note": "49 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E076": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E076 -> E071 -> E052 -> E003",
+      "name": "Ben Anderson",
+      "phone": "6396755035823",
+      "account": "ACCT6751841",
+      "handle": "@ben.anderson573",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E076 -> E071 -> E052 -> E003"
+      }
+    },
+    "E027": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E051 within minutes on 6 episodes",
+      "name": "Wes Duarte",
+      "phone": "6396352924332",
+      "account": "ACCT6352691",
+      "handle": "@wes.duarte271",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E051 within minutes on 6 episodes"
+      }
+    },
+    "E030": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E073 within minutes on 6 episodes",
+      "name": "Elena Chen",
+      "phone": "6397573670358",
+      "account": "ACCT7572650",
+      "handle": "@elena.chen233",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E073 within minutes on 6 episodes"
+      }
+    },
+    "E023": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "41 posts on one day all mentioning the same 3 handles",
+      "name": "Wes Bakker",
+      "phone": "6393143530719",
+      "account": "ACCT3149040",
+      "handle": "@wes.bakker114",
+      "details": {
+        "type": "post_burst",
+        "note": "41 posts on one day all mentioning the same 3 handles"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1155
+  }
+}

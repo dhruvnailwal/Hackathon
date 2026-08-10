@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E037": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ana Silva",
+      "phone": "6397367064933",
+      "account": "ACCT7365552",
+      "handle": "@ana.silva971",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E010": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 9 senders then fan-out to 11 in ~3 days",
+      "name": "Lena Chen",
+      "phone": "6399998948139",
+      "account": "ACCT9998454",
+      "handle": "@lena.chen237",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 9 senders then fan-out to 11 in ~3 days"
+      }
+    },
+    "E053": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ava Lopes",
+      "phone": "6391266084835",
+      "account": "ACCT1263065",
+      "handle": "@ava.lopes537",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E035": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Cara Patida",
+      "phone": "6395217497479",
+      "account": "ACCT5215239",
+      "handle": "@cara.patida626",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E046": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E006 within minutes on 6 episodes",
+      "name": "Omar Yamamoto",
+      "phone": "6398371348528",
+      "account": "ACCT8373174",
+      "handle": "@omar.yamamoto953",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E006 within minutes on 6 episodes"
+      }
+    },
+    "E026": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E026 -> E062 -> E002 -> E064",
+      "name": "Cara Rossi",
+      "phone": "6398003382376",
+      "account": "ACCT8004203",
+      "handle": "@cara.rossi846",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E026 -> E062 -> E002 -> E064"
+      }
+    },
+    "E064": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "41 posts on one day all mentioning the same 3 handles",
+      "name": "Wes ElSayed",
+      "phone": "6393542547965",
+      "account": "ACCT3548600",
+      "handle": "@wes.elsayed141",
+      "details": {
+        "type": "post_burst",
+        "note": "41 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E072": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "42 posts on one day all mentioning the same 3 handles",
+      "name": "Wes Tanaka",
+      "phone": "6392494702090",
+      "account": "ACCT2498749",
+      "handle": "@wes.tanaka358",
+      "details": {
+        "type": "post_burst",
+        "note": "42 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E043": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E038 within minutes on 6 episodes",
+      "name": "Zane Carlos",
+      "phone": "6399312680706",
+      "account": "ACCT9311626",
+      "handle": "@zane.carlos991",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E038 within minutes on 6 episodes"
+      }
+    },
+    "E001": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Mara Vargas",
+      "phone": "6395858857360",
+      "account": "ACCT5853337",
+      "handle": "@mara.vargas663",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E015": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E012 within minutes on 6 episodes",
+      "name": "Xin Brooks",
+      "phone": "6398836017933",
+      "account": "ACCT8834641",
+      "handle": "@xin.brooks115",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E012 within minutes on 6 episodes"
+      }
+    },
+    "E080": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~517,822) then zero activity thereafter",
+      "name": "Wes Haddad",
+      "phone": "6395031625358",
+      "account": "ACCT5032626",
+      "handle": "@wes.haddad90",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~517,822) then zero activity thereafter"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1158
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E015": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "45 posts on one day all mentioning the same 3 handles",
+      "name": "Ava Iqbal",
+      "phone": "6396706107177",
+      "account": "ACCT6702027",
+      "handle": "@ava.iqbal123",
+      "details": {
+        "type": "post_burst",
+        "note": "45 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E023": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "51 deposits clustered just under 10,000",
+      "name": "Sara ElSayed",
+      "phone": "6393861279134",
+      "account": "ACCT3865336",
+      "handle": "@sara.elsayed409",
+      "details": {
+        "type": "structuring",
+        "note": "51 deposits clustered just under 10,000"
+      }
+    },
+    "E048": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E048 -> E092 -> E111 -> E052",
+      "name": "Yara Rossi",
+      "phone": "6396982004649",
+      "account": "ACCT6982186",
+      "handle": "@yara.rossi82",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E048 -> E092 -> E111 -> E052"
+      }
+    },
+    "E026": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E026 -> E102 -> E006 -> E004",
+      "name": "Hugo Alvarez",
+      "phone": "6396435495950",
+      "account": "ACCT6437438",
+      "handle": "@hugo.alvarez371",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E026 -> E102 -> E006 -> E004"
+      }
+    },
+    "E046": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "46 posts on one day all mentioning the same 3 handles",
+      "name": "Fahad Gomes",
+      "phone": "6391793370403",
+      "account": "ACCT1794602",
+      "handle": "@fahad.gomes551",
+      "details": {
+        "type": "post_burst",
+        "note": "46 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E064": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E059 within minutes on 6 episodes",
+      "name": "Cara Iqbal",
+      "phone": "6399707662503",
+      "account": "ACCT9709663",
+      "handle": "@cara.iqbal914",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E059 within minutes on 6 episodes"
+      }
+    },
+    "E079": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E009 within minutes on 6 episodes",
+      "name": "Priya Zhou",
+      "phone": "6398714320512",
+      "account": "ACCT8715601",
+      "handle": "@priya.zhou752",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E009 within minutes on 6 episodes"
+      }
+    },
+    "E029": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Raj Duarte",
+      "phone": "6395822567611",
+      "account": "ACCT5823934",
+      "handle": "@raj.duarte57",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E078": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ana Okafor",
+      "phone": "6395188543039",
+      "account": "ACCT5185554",
+      "handle": "@ana.okafor83",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E066": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Tomas Gomes",
+      "phone": "6391684940213",
+      "account": "ACCT1684538",
+      "handle": "@tomas.gomes790",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E050": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E029 within minutes on 6 episodes",
+      "name": "Ana Yamamoto",
+      "phone": "6397159386452",
+      "account": "ACCT7151876",
+      "handle": "@ana.yamamoto648",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E029 within minutes on 6 episodes"
+      }
+    },
+    "E009": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "51 deposits clustered just under 10,000",
+      "name": "Cara Haddad",
+      "phone": "6396317029314",
+      "account": "ACCT6318691",
+      "handle": "@cara.haddad31",
+      "details": {
+        "type": "structuring",
+        "note": "51 deposits clustered just under 10,000"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1056
+  }
+}

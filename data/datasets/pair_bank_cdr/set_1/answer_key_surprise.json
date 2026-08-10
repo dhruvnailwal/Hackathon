@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E072": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "43 posts on one day all mentioning the same 3 handles",
+      "name": "Omar Chen",
+      "phone": "6398785115163",
+      "account": "ACCT8783409",
+      "handle": "@omar.chen51",
+      "details": {
+        "type": "post_burst",
+        "note": "43 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E071": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "51 deposits clustered just under 10,000",
+      "name": "Ivy Yamamoto",
+      "phone": "6399788047527",
+      "account": "ACCT9783867",
+      "handle": "@ivy.yamamoto266",
+      "details": {
+        "type": "structuring",
+        "note": "51 deposits clustered just under 10,000"
+      }
+    },
+    "E021": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~680,770) then zero activity thereafter",
+      "name": "Ivy Novak",
+      "phone": "6393498278159",
+      "account": "ACCT3498602",
+      "handle": "@ivy.novak769",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~680,770) then zero activity thereafter"
+      }
+    },
+    "E053": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "48 deposits clustered just under 10,000",
+      "name": "Leo Haddad",
+      "phone": "6393973601536",
+      "account": "ACCT3975669",
+      "handle": "@leo.haddad69",
+      "details": {
+        "type": "structuring",
+        "note": "48 deposits clustered just under 10,000"
+      }
+    },
+    "E046": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "46 deposits clustered just under 10,000",
+      "name": "Ben Brooks",
+      "phone": "6393109831519",
+      "account": "ACCT3108310",
+      "handle": "@ben.brooks211",
+      "details": {
+        "type": "structuring",
+        "note": "46 deposits clustered just under 10,000"
+      }
+    },
+    "E029": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E029 -> E101 -> E023 -> E061",
+      "name": "Ravi Patida",
+      "phone": "6392314981836",
+      "account": "ACCT2319742",
+      "handle": "@ravi.patida623",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E029 -> E101 -> E023 -> E061"
+      }
+    },
+    "E030": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "34 posts on one day all mentioning the same 3 handles",
+      "name": "Diego Meyer",
+      "phone": "6391614023940",
+      "account": "ACCT1612309",
+      "handle": "@diego.meyer90",
+      "details": {
+        "type": "post_burst",
+        "note": "34 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E075": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "60 deposits clustered just under 10,000",
+      "name": "Ravi Vargas",
+      "phone": "6391896429802",
+      "account": "ACCT1899169",
+      "handle": "@ravi.vargas850",
+      "details": {
+        "type": "structuring",
+        "note": "60 deposits clustered just under 10,000"
+      }
+    },
+    "E055": {
+      "person_type": "surprise",
+      "storyline": "structuring",
+      "note": "55 deposits clustered just under 10,000",
+      "name": "Xin Kim",
+      "phone": "6395575962747",
+      "account": "ACCT5572958",
+      "handle": "@xin.kim693",
+      "details": {
+        "type": "structuring",
+        "note": "55 deposits clustered just under 10,000"
+      }
+    },
+    "E034": {
+      "person_type": "surprise",
+      "storyline": "silence",
+      "note": "large debit (~228,421) then zero activity thereafter",
+      "name": "Ben Patida",
+      "phone": "6395671692966",
+      "account": "ACCT5673376",
+      "handle": "@ben.patida985",
+      "details": {
+        "type": "silence",
+        "note": "large debit (~228,421) then zero activity thereafter"
+      }
+    },
+    "E002": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Uma Chen",
+      "phone": "6398248304731",
+      "account": "ACCT8249357",
+      "handle": "@uma.chen59",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E045": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 14 senders then fan-out to 13 in ~3 days",
+      "name": "Sara Zhou",
+      "phone": "6393545560419",
+      "account": "ACCT3549456",
+      "handle": "@sara.zhou628",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 14 senders then fan-out to 13 in ~3 days"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1057
+  }
+}

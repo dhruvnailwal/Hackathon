@@ -1,0 +1,163 @@
+{
+  "entities": {
+    "E078": {
+      "person_type": "surprise",
+      "storyline": "fan_io",
+      "note": "fan-in from 11 senders then fan-out to 12 in ~3 days",
+      "name": "Lena Rossi",
+      "phone": "6397854537852",
+      "account": "ACCT7857685",
+      "handle": "@lena.rossi341",
+      "details": {
+        "type": "fan_io",
+        "note": "fan-in from 11 senders then fan-out to 12 in ~3 days"
+      }
+    },
+    "E014": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Ravi Kim",
+      "phone": "6395871234532",
+      "account": "ACCT5877007",
+      "handle": "@ravi.kim520",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E050": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "51 posts on one day all mentioning the same 3 handles",
+      "name": "Xin Patida",
+      "phone": "6391133836598",
+      "account": "ACCT1134722",
+      "handle": "@xin.patida982",
+      "details": {
+        "type": "post_burst",
+        "note": "51 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E048": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Elena Patida",
+      "phone": "6395991033736",
+      "account": "ACCT5995673",
+      "handle": "@elena.patida657",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E053": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E053 -> E006 -> E008 -> E046",
+      "name": "Zane Bakker",
+      "phone": "6398306317394",
+      "account": "ACCT8303036",
+      "handle": "@zane.bakker779",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E053 -> E006 -> E008 -> E046"
+      }
+    },
+    "E059": {
+      "person_type": "surprise",
+      "storyline": "chain",
+      "note": "3-hop layering E059 -> E022 -> E032 -> E104",
+      "name": "Raj Carlos",
+      "phone": "6395438450246",
+      "account": "ACCT5438888",
+      "handle": "@raj.carlos669",
+      "details": {
+        "type": "chain",
+        "note": "3-hop layering E059 -> E022 -> E032 -> E104"
+      }
+    },
+    "E013": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "39 posts on one day all mentioning the same 3 handles",
+      "name": "Victor ElSayed",
+      "phone": "6394532219190",
+      "account": "ACCT4531823",
+      "handle": "@victor.elsayed737",
+      "details": {
+        "type": "post_burst",
+        "note": "39 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E069": {
+      "person_type": "surprise",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
+      "name": "Leo Yamamoto",
+      "phone": "6394468169934",
+      "account": "ACCT4469490",
+      "handle": "@leo.yamamoto794",
+      "details": {
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
+      }
+    },
+    "E021": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "44 posts on one day all mentioning the same 3 handles",
+      "name": "Leo Haddad",
+      "phone": "6394662613090",
+      "account": "ACCT4669945",
+      "handle": "@leo.haddad697",
+      "details": {
+        "type": "post_burst",
+        "note": "44 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E071": {
+      "person_type": "surprise",
+      "storyline": "post_burst",
+      "note": "46 posts on one day all mentioning the same 3 handles",
+      "name": "Sara Yamamoto",
+      "phone": "6398322906915",
+      "account": "ACCT8324003",
+      "handle": "@sara.yamamoto220",
+      "details": {
+        "type": "post_burst",
+        "note": "46 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E024": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E001 within minutes on 6 episodes",
+      "name": "Grace Patida",
+      "phone": "6399023948961",
+      "account": "ACCT9021189",
+      "handle": "@grace.patida42",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E001 within minutes on 6 episodes"
+      }
+    },
+    "E010": {
+      "person_type": "surprise",
+      "storyline": "colocation",
+      "note": "call then transfer to E100 within minutes on 6 episodes",
+      "name": "Grace Tanaka",
+      "phone": "6394915945833",
+      "account": "ACCT4911460",
+      "handle": "@grace.tanaka387",
+      "details": {
+        "type": "colocation",
+        "note": "call then transfer to E100 within minutes on 6 episodes"
+      }
+    }
+  },
+  "meta": {
+    "seed": 1156
+  }
+}
