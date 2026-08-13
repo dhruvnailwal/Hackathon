@@ -49,6 +49,7 @@ def main() -> int:
         min_events_per_entity=cfg.min_events_per_entity,
         tol_minutes=cfg.tol_minutes,
         structuring_threshold=cfg.structuring_threshold,
+        probe_cfg=cfg.probe_config(),
     )
     result = pipe.run(paths, with_models=cfg.with_models)
 

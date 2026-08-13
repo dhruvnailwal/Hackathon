@@ -53,6 +53,12 @@ FIELD_ALIASES: Dict[str, List[str]] = {
         "date",
         "event_time",
         "when",
+        # non-English exports (§3 robustness: language-agnostic headers)
+        "fecha", "fecha_transaccion", "date_transaction",
+        "data", "horodatage", "date_heure",
+        "datum", "zeitstempel",
+        "data_hora",
+        "vreme", "datum_i_vreme",
     ],
     "amount": [
         "amount",
@@ -65,6 +71,11 @@ FIELD_ALIASES: Dict[str, List[str]] = {
         "sum",
         "total",
         "amt",
+        # non-English
+        "monto", "importe", "valor", "cantidad",
+        "montant", "valeur",
+        "betrag",
+        "valor_transacao", "montante",
     ],
     "counterparty": [
         "counterparty",
@@ -86,6 +97,11 @@ FIELD_ALIASES: Dict[str, List[str]] = {
         "target",
         "to",
         "dest",
+        # non-English
+        "beneficiario", "destinatario", "receptor", "cuenta_destino",
+        "bénéficiaire", "destinataire",
+        "empfaenger",
+        "beneficiario_pagamento",
     ],
     "event_type": [
         "event_type",
@@ -94,6 +110,7 @@ FIELD_ALIASES: Dict[str, List[str]] = {
         "kind",
         "category",
         "record_type",
+        "tipo", "tipo_movimiento", "nature",
     ],
     "location": [
         "location",
@@ -108,6 +125,9 @@ FIELD_ALIASES: Dict[str, List[str]] = {
         "city",
         "place",
         "terminal",
+        "sucursal", "agencia", "torre", "celda", "ciudad",
+        "lieu", "ville", "agence",
+        "standort", "filiale",
     ],
     "direction": [
         "direction",
@@ -116,17 +136,27 @@ FIELD_ALIASES: Dict[str, List[str]] = {
         "in_out",
         "txn_direction",
         "sign",
+        "sentido", "tipo_op", "sens",
     ],
-    "duration": ["duration", "call_duration", "dur_sec", "seconds", "length", "duration_seconds", "duration_secs"],
+    "duration": ["duration", "call_duration", "dur_sec", "seconds", "length", "duration_seconds", "duration_secs",
+                 "duracion", "duracion_llamada", "segundos", "duree", "dauer"],
 }
 
 # who the row belongs to — the actor identity (used for entity resolution)
 ACTOR_ID_ALIASES: Dict[str, List[str]] = {
     "actor_id": [
-        "subscriber", "subscriber_id", "customer", "customer_id", "client_id",
+        # NOTE: bare "subscriber" is NOT here — CDR exports use it for the
+        # subscriber NAME (subscriber_name/subscriber), and aliasing it to
+        # actor_id would swallow the name slot and break cross-source
+        # entity linking (phone <-> account) that colocation relies on.
+        "subscriber_id", "subscriber_number", "customer", "customer_id", "client_id",
         "party_id", "iban", "account", "account_id", "account_number", "account_no",
         "acct", "acct_id", "msisdn", "caller_msisdn", "originating_number", "caller", "user_id",
         "device_id", "device", "handle", "user_handle", "username", "user_name",
+        "cuenta", "numero_cuenta", "nro_cuenta", "no_cuenta", "cuenta_id", "cliente", "cliente_id",
+        "numero_de_cuenta", "titular", "cuenta_bancaria",
+        "compte", "numero_compte", "titulaire", "kontonummer", "konto", "kontoinhaber",
+        "conta", "numero_conta", "titular_conta", "cliente_conta",
     ],
 }
 ACTOR_NAME_ALIASES: Dict[str, List[str]] = {
@@ -167,6 +197,7 @@ MODEL_REQUIRED_FIELDS: Dict[str, Set[str]] = {
     "statml": {"amount", "timestamp"},
     "benford": {"amount"},
     "structuring": {"amount"},
+    "chain": {"counterparty", "amount", "timestamp"},
     "entity_resolution": {"counterparty"},
     "schema_detection": set(),
 }

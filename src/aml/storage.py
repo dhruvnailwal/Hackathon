@@ -1,10 +1,10 @@
-"""Persistent run storage — every analysis is archived outside the repo.
+﻿"""Persistent run storage — every analysis is archived outside the repo.
 
-Runs land in the user's application-data directory (e.g. %APPDATA%\\AnomalyLens
-on Windows, ~/.local/share/AnomalyLens on Linux/macOS), so history survives
+Runs land in the user's application-data directory (e.g. %APPDATA%\\TraceWeave
+on Windows, ~/.local/share/TraceWeave on Linux/macOS), so history survives
 restarts, uninstalls and reinstalls of the app. Each run folder holds the
 full report set plus a machine-readable index.json:
-    <user_data>/AnomalyLens/runs/<run_id>/
+    <user_data>/TraceWeave/runs/<run_id>/
         index.json      <- summary + file manifest (used by History)
         report.md / report.html / report.pdf / report.json
         charts/*.png
@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-APP_NAME = "AnomalyLens"
+APP_NAME = "TraceWeave"
 
 
 def results_root() -> Path:

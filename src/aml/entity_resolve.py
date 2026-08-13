@@ -56,6 +56,9 @@ def resolve_entities(
     if actor_name_col not in df.columns:
         df = df.copy()
         df[actor_name_col] = df[actor_col]
+    if "source" not in df.columns:
+        df = df.copy()
+        df["source"] = ""
 
     id_to_entity: Dict[str, str] = {}
     name_to_entity: Dict[str, str] = {}
@@ -69,18 +72,25 @@ def resolve_entities(
         counter["m"] += 1
         return f"E{counter['m']:04d}"
 
-    def claim(identifier: Optional[str], name: str) -> str:
+    def claim(identifier: Optional[str], name: str, source: str) -> str:
         if identifier and identifier in id_to_entity:
             ent = id_to_entity[identifier]
             entity_names.setdefault(ent, set()).add(name)
             return ent
         if name:
             m_eid, score = index.match(name)
-            if m_eid:
+            # Name-based linking only merges ACROSS sources. Two identifiers
+            # in the SAME source that share a name are different customers
+            # (name collisions are common in synthetic + real populations);
+            # merging them pollutes every downstream entity-level signal
+            # (a dormant person's stream suddenly contains a stranger's
+            # events, which is exactly what destroyed the behavioral model).
+            if m_eid and source not in _sources_of.get(m_eid, set()):
                 if identifier:
                     id_to_entity[identifier] = m_eid
                 entity_names.setdefault(m_eid, set()).add(name)
                 name_to_entity[name] = m_eid
+                _sources_of.setdefault(m_eid, set()).add(source)
                 return m_eid
         ent = next_eid()
         if identifier:
@@ -88,12 +98,21 @@ def resolve_entities(
         entity_names[ent] = {name} if name else set()
         name_to_entity[name] = ent
         index.add(name, ent)
+        _sources_of.setdefault(ent, set()).add(source)
         return ent
 
-    # pass 1: build actor entities from (identifier, name) pairs
-    rows = df[[actor_col, actor_name_col]].dropna(subset=[actor_col]).drop_duplicates()
+    # sources each entity has actor identifiers in (same-source name
+    # collisions must never merge)
+    _sources_of: Dict[str, Set[str]] = {}
+
+    # pass 1: build actor entities from (identifier, name, source) triples
+    rows = df[[actor_col, actor_name_col, "source"]].dropna(subset=[actor_col]).drop_duplicates()
     for _, row in rows.iterrows():
-        claim(row[actor_col], str(row[actor_name_col]) if pd.notna(row[actor_name_col]) else "")
+        claim(
+            str(row[actor_col]) if pd.notna(row[actor_col]) else None,
+            str(row[actor_name_col]) if pd.notna(row[actor_name_col]) else "",
+            str(row["source"]) if pd.notna(row["source"]) else "",
+        )
 
     # pass 2: resolve counterparty identifiers onto the same clusters
     counterparty_entities: Dict[str, str] = {}

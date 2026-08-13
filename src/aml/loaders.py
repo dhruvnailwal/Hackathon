@@ -53,8 +53,20 @@ def load_csv(path: Path) -> LoadedSource:
     except OSError:
         pass
     sep = _sniff_sep(head)
-    df = pd.read_csv(path, sep=sep, low_memory=False)
+    enc = "utf-8"
+    try:
+        df = pd.read_csv(path, sep=sep, low_memory=False)  # default utf-8, strict
+    except (UnicodeDecodeError, pd.errors.ParserError) as e:
+        if isinstance(e, UnicodeDecodeError):
+            # non-UTF8 export (latin-1/windows-1252): retry with a lossy
+            # single-byte codec instead of crashing the whole pipeline
+            enc = "latin-1"
+            df = pd.read_csv(path, sep=sep, low_memory=False, encoding=enc)
+        else:
+            raise
     warning = "" if sep == "," else f"sniffed delimiter {sep!r}"
+    if enc != "utf-8":
+        warning = f"{warning} ; non-UTF8 file read as latin-1" if warning else "non-UTF8 file read as latin-1"
     return LoadedSource(df=df, file=str(path), format="csv", warning=warning)
 
 

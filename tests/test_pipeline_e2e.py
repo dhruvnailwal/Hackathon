@@ -43,7 +43,10 @@ def test_pipeline_bank_only_degrades_network():
         res = _run([str(p)])
     assert res.sufficiency["network"].status == "DEGRADED"
     assert res.sufficiency["benford"].status == "SUPPORTED"
-    assert res.sufficiency["time_correlation"].status == "SUPPORTED"
+    # single-source: the merge_asof cross-source model cannot run, so the
+    # engine says DEGRADED rather than claiming SUPPORTED with no scores
+    assert res.sufficiency["time_correlation"].status == "DEGRADED"
+    assert res.model_scores.get("time_correlation") is None
 
 
 def test_report_generation(synthetic_dir, tmp_path):

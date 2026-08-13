@@ -1,4 +1,4 @@
-"""Anomaly Lens — PySide6 desktop analyst.
+﻿"""TraceWeave — PySide6 desktop analyst.
 
 A drag-and-drop window for financial / comms source files (bank CSV,
 CDR, social, JSON, JSONL, prose logs…). Press **Analyze** and every
@@ -331,7 +331,7 @@ def header_row(window) -> QFrame:
 
     brand = QVBoxLayout()
     brand.setSpacing(1)
-    t = QLabel("Anomaly Lens")
+    t = QLabel("TraceWeave")
     t.setObjectName("AppTitle")
     tag = QLabel("multi-source anomaly detection · drag-and-drop analyst")
     tag.setObjectName("AppTag")
@@ -599,7 +599,7 @@ class HomePage(QWidget):
 class HistoryDialog(QDialog):
     def __init__(self, runs, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Anomaly Lens — History")
+        self.setWindowTitle("TraceWeave — History")
         self.resize(720, 480)
         self.runs = runs
         lay = QVBoxLayout(self)
@@ -736,7 +736,7 @@ class ReportView(QWidget):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Anomaly Lens")
+        self.setWindowTitle("TraceWeave")
         self.resize(1200, 820)
         self.setObjectName("Root")
 
@@ -777,7 +777,7 @@ class MainWindow(QWidget):
         self.home.btn_analyze.setEnabled(True)
         self.home.btn_analyze.setText("Analyze")
         if isinstance(result, Exception):
-            QMessageBox.critical(self, "Anomaly Lens",
+            QMessageBox.critical(self, "TraceWeave",
                                  f"Analysis failed:\n{result}")
             return
         self._show_result(result)
@@ -803,7 +803,7 @@ class MainWindow(QWidget):
         from aml import storage
         meta = storage.load_run(run_id)
         if not meta:
-            QMessageBox.warning(self, "Anomaly Lens", f"Run {run_id} not found.")
+            QMessageBox.warning(self, "TraceWeave", f"Run {run_id} not found.")
             return
         html = meta.get("files", {}).get("html")
         if html and Path(html).exists():
@@ -850,7 +850,7 @@ def _apply_refresh(result, btn, window=None):
     if window is not None and hasattr(window, "populate"):
         window.populate(result)
     else:
-        QMessageBox.information(btn, "Anomaly Lens", "Analysis finished.")
+        QMessageBox.information(btn, "TraceWeave", "Analysis finished.")
 
 
 def main() -> int:

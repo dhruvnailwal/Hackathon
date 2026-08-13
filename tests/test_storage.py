@@ -1,4 +1,4 @@
-import json
+﻿import json
 import shutil
 
 from aml import storage
@@ -11,7 +11,7 @@ def _run_and_save(synthetic_dir, tmp_path, monkeypatch, label="test"):
     import platformdirs
     root = tmp_path / "userdata"
     monkeypatch.setattr(platformdirs, "user_data_dir",
-                        lambda *a, **k: str(root / "AnomalyLens"))
+                        lambda *a, **k: str(root / "TraceWeave"))
     src = tmp_path / "sources"
     src.mkdir(parents=True, exist_ok=True)
     for p in synthetic_dir.glob("sources/*"):

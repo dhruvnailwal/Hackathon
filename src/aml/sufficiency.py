@@ -39,9 +39,16 @@ class SufficiencyVerdict:
 
 
 class SufficiencyEngine:
-    def __init__(self, resolved_sources: List[SourceResolved], min_events_per_entity: int = 30):
+    def __init__(self, resolved_sources: List[SourceResolved], min_events_per_entity: int = 30,
+                 unified_n_rows: Optional[int] = None, unified_n_entities: Optional[int] = None):
         self.resolved_sources = resolved_sources
         self.min_events_per_entity = min_events_per_entity
+        # when the pipeline has deduplicated the unified frame, prefer its
+        # honest totals over the per-file sums (same file in csv+json would
+        # otherwise double-count rows AND entities in the volume gate)
+        self.n_rows = unified_n_rows if unified_n_rows is not None else sum(rs.n_rows for rs in resolved_sources)
+        self.n_entities = (unified_n_entities if unified_n_entities is not None
+                           else sum(rs.n_entities for rs in resolved_sources))
         self.present_sources = {rs.source for rs in resolved_sources}
         # union of all resolved canonical fields across sources
         self.populated: Set[str] = set()
@@ -78,6 +85,12 @@ class SufficiencyEngine:
     def evaluate(self) -> Dict[str, SufficiencyVerdict]:
         verd: Dict[str, SufficiencyVerdict] = {}
         entity_note = self._no_entity_note()
+        total_rows = self.n_rows
+        total_entities = self.n_entities
+        volume_note = None if entity_note else self._overall_volume_note(total_rows, total_entities)
+
+        def entity_block(model: str, required: Set[str], reason: str) -> None:
+            verd[model] = SufficiencyVerdict(model, VERDICT_BLOCKED, set(), required, 0.0, reason)
 
         # schema detection / entity resolution always run
         verd["schema_detection"] = SufficiencyVerdict(
@@ -85,10 +98,17 @@ class SufficiencyEngine:
             f"resolved {len(self.populated)} canonical slots", list(self.populated),
         )
         if self.present_sources:
-            verd["entity_resolution"] = SufficiencyVerdict(
-                "entity_resolution", VERDICT_SUPPORTED, self.populated, {"counterparty"}, 1.0,
-                "counterparty/edge slots resolved", sorted(self.populated),
-            )
+            if "counterparty" in self.populated:
+                verd["entity_resolution"] = SufficiencyVerdict(
+                    "entity_resolution", VERDICT_SUPPORTED, {"counterparty"}, {"counterparty"}, 1.0,
+                    "counterparty/edge slots resolved", sorted(self.populated),
+                )
+            else:
+                verd["entity_resolution"] = SufficiencyVerdict(
+                    "entity_resolution", VERDICT_DEGRADED, set(), {"counterparty"}, 0.0,
+                    "entity_resolution DEGRADED: no counterparty/edge dimension resolved; "
+                    "entities cluster by name only",
+                )
         else:
             verd["entity_resolution"] = SufficiencyVerdict(
                 "entity_resolution", VERDICT_BLOCKED, set(), {"counterparty"}, 0.0,
@@ -97,10 +117,20 @@ class SufficiencyEngine:
 
         # time correlation (always, but internal vs cross-source messaging)
         if "timestamp" in self.populated:
-            verd["time_correlation"] = SufficiencyVerdict(
-                "time_correlation", VERDICT_SUPPORTED, {"timestamp"}, {"timestamp"}, 1.0,
-                "timestamp resolved; enables internal + cross-source correlation",
-            )
+            if len(self.present_sources) < 2:
+                # plan §1B: bank-only/CDR-only keeps C-internal only; the
+                # shipped merge_asof model needs a bank+non-bank pair, so we
+                # say so instead of claiming SUPPORTED and silently scoring 0
+                verd["time_correlation"] = SufficiencyVerdict(
+                    "time_correlation", VERDICT_DEGRADED, {"timestamp"}, {"timestamp"}, 1.0,
+                    "timestamp resolved but single-source: only internal correlation is "
+                    "possible (cross-source colocation needs 2+ sources); merge_asof model skipped",
+                )
+            else:
+                verd["time_correlation"] = SufficiencyVerdict(
+                    "time_correlation", VERDICT_SUPPORTED, {"timestamp"}, {"timestamp"}, 1.0,
+                    "timestamp resolved; enables internal + cross-source correlation",
+                )
         else:
             verd["time_correlation"] = SufficiencyVerdict(
                 "time_correlation", VERDICT_BLOCKED, set(), {"timestamp"}, 0.0,
@@ -110,10 +140,20 @@ class SufficiencyEngine:
         # network
         if "counterparty" in self.populated:
             if len(self.present_sources) < 2:
-                verd["network"] = SufficiencyVerdict(
-                    "network", VERDICT_DEGRADED, {"counterparty"}, {"counterparty"}, 1.0,
-                    "network DEGRADED: single source; edges internal only (add CDR/bank for cross-source strength)",
-                )
+                if self.present_sources == {"social"}:
+                    # activation matrix (§1B): D — social only = BLOCKED
+                    # (no trusted edge; hashtag/mention edges are projected)
+                    verd["network"] = SufficiencyVerdict(
+                        "network", VERDICT_BLOCKED, {"counterparty"}, {"counterparty"}, 1.0,
+                        "Network-correlation model blocked: social-only data has no trusted "
+                        "edge dimension (follows/hashtags are projected, not confirmed); "
+                        "add a bank (account) or call (phone) file to enable it.",
+                    )
+                else:
+                    verd["network"] = SufficiencyVerdict(
+                        "network", VERDICT_DEGRADED, {"counterparty"}, {"counterparty"}, 1.0,
+                        "network DEGRADED: single source; edges internal only (add CDR/bank for cross-source strength)",
+                    )
             else:
                 verd["network"] = SufficiencyVerdict(
                     "network", VERDICT_SUPPORTED, {"counterparty"}, {"counterparty"}, 1.0,
@@ -175,30 +215,58 @@ class SufficiencyEngine:
                 "behavioral blocked: no amount/timestamp dimension resolved",
             )
 
-        # time-correlation DEGRADED if very sparse
-        if verd["time_correlation"].status == VERDICT_SUPPORTED:
-            note = self._overall_note()
-            if note:
+        # chain / layering: needs bank-grade amount + counterparty + time
+        if {"amount", "counterparty", "timestamp"} <= self.populated:
+            verd["chain"] = SufficiencyVerdict(
+                "chain", VERDICT_SUPPORTED,
+                {"amount", "counterparty", "timestamp"},
+                {"amount", "counterparty", "timestamp"}, 1.0,
+                "amount + counterparty + timestamp resolved; multi-hop layering detection available",
+            )
+        else:
+            missing = {"amount", "counterparty", "timestamp"} - self.populated
+            verd["chain"] = SufficiencyVerdict(
+                "chain", VERDICT_BLOCKED, self.populated,
+                {"amount", "counterparty", "timestamp"}, 0.0,
+                f"chain/layering model skipped: missing {'/'.join(sorted(missing))} "
+                "dimension(s) — a bank (account) file with amounts and "
+                "counterparties enables it.",
+            )
+
+        # time-correlation DEGRADED/BLOCKED if very sparse or entity-less
+        if verd["time_correlation"].status != VERDICT_BLOCKED:
+            if entity_note:
                 verd["time_correlation"] = SufficiencyVerdict(
-                    "time_correlation", VERDICT_DEGRADED, {"timestamp"}, {"timestamp"}, 1.0, note,
+                    "time_correlation", VERDICT_BLOCKED, {"timestamp"}, {"timestamp"}, 1.0,
+                    entity_note,
+                )
+            elif volume_note:
+                verd["time_correlation"] = SufficiencyVerdict(
+                    "time_correlation", VERDICT_BLOCKED, {"timestamp"}, {"timestamp"}, 1.0,
+                    volume_note,
                 )
 
-        # entity-less data: rows exist but no actor/entity dimension resolved,
-        # so every entity-scored model degrades (honest "insufficient data")
-        if entity_note:
-            for model in ("time_correlation", "network", "statml",
-                          "benford", "structuring", "behavioral"):
-                v = verd.get(model)
-                if v is not None and v.status == VERDICT_SUPPORTED:
+        # entity-less or thin-volume data: every entity-scored stage BLOCKS
+        # instead of running and producing a spurious score on noise (§1B
+        # failure-mode contract: "Sparse file (<30 rows / entity) ... C/D/E →
+        # BLOCKED with 'insufficient volume for statistical reliability (n=…)'")
+        for model in ("network", "statml", "benford", "structuring", "behavioral", "chain"):
+            v = verd.get(model)
+            if v is not None and v.status != VERDICT_BLOCKED:
+                if entity_note:
                     verd[model] = SufficiencyVerdict(
-                        v.model, VERDICT_DEGRADED, v.populated, v.required, v.ratio, entity_note,
+                        v.model, VERDICT_BLOCKED, v.populated, v.required, v.ratio, entity_note,
+                    )
+                elif volume_note:
+                    verd[model] = SufficiencyVerdict(
+                        v.model, VERDICT_BLOCKED, v.populated, v.required, v.ratio, volume_note,
                     )
         return verd
 
     # -- helpers -----------------------------------------------------------
     def _no_entity_note(self) -> Optional[str]:
-        total_rows = sum(rs.n_rows for rs in self.resolved_sources)
-        total_entities = sum(rs.n_entities for rs in self.resolved_sources)
+        total_rows = self.n_rows
+        total_entities = self.n_entities
         if total_entities == 0 and total_rows > 0:
             return (
                 "no entity dimension resolved: rows cannot be assigned to entities; "
@@ -207,9 +275,7 @@ class SufficiencyEngine:
         return None
 
     def _overall_note(self) -> Optional[str]:
-        total_rows = sum(rs.n_rows for rs in self.resolved_sources)
-        total_entities = sum(rs.n_entities for rs in self.resolved_sources)
-        return self._overall_volume_note(total_rows, total_entities)
+        return self._overall_volume_note(self.n_rows, self.n_entities)
 
     def _amount_hint(self) -> str:
         return "Missing `amount` dimension: the structuring/Benford views are unavailable."

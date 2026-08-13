@@ -34,13 +34,14 @@ class PipelineResult:
 
 
 class Pipeline:
-    def __init__(self, min_events_per_entity: int = 30, tol_minutes: int = 25,
+    def __init__(self, min_events_per_entity: int = 30, tol_minutes: int = 30,
                  structuring_threshold: float = 10000.0,
-                 fusion: str = "borda"):
+                 fusion: str = "borda", probe_cfg=None):
         self.min_events_per_entity = min_events_per_entity
         self.tol_minutes = tol_minutes
         self.structuring_threshold = structuring_threshold
         self.fusion = fusion
+        self.probe_cfg = probe_cfg
 
     def ingest(self, paths):
         from .loaders import load_any
@@ -48,7 +49,7 @@ class Pipeline:
         resolved_sources = []
         for path in paths:
             loaded = load_any(path)
-            det = detect_dataframe(loaded.df, file=loaded.file)
+            det = detect_dataframe(loaded.df, file=loaded.file, probe_cfg=self.probe_cfg)
             if loaded.warning:
                 det.warnings.insert(0, loaded.warning)
             norm = det.normalized
@@ -68,6 +69,16 @@ class Pipeline:
                 unified = pd.concat(non_empty, ignore_index=True, sort=False)
         else:
             unified = pd.DataFrame()
+        # the same logical fact sheet may arrive in several formats (csv +
+        # json of the same export); normalise remaining 'missing' spellings,
+        # then drop exact duplicate rows so one event is never counted twice
+        # by merge_asof / counts / feature vectors
+        if not unified.empty:
+            from .schema_detect import _clean_ids
+            for c in unified.columns:
+                if unified[c].dtype == object:
+                    unified[c] = _clean_ids(unified[c])
+            unified = unified.drop_duplicates()
         for f in UNIFIED_COLUMNS + ["actor_raw", "counterparty_id_raw", "actor_name"]:
             if f not in unified.columns:
                 unified[f] = np.nan
@@ -89,7 +100,11 @@ class Pipeline:
     def run(self, paths, with_models=True) -> PipelineResult:
         unified, resolved_sources = self.ingest(paths)
         unified, em = self.resolve(unified, resolved_sources)
-        engine = SufficiencyEngine(resolved_sources, self.min_events_per_entity)
+        engine = SufficiencyEngine(
+            resolved_sources, self.min_events_per_entity,
+            unified_n_rows=len(unified),
+            unified_n_entities=int(unified["entity_id"].nunique()) if not unified.empty else 0,
+        )
         sufficiency = engine.evaluate()
         result = PipelineResult(
             unified=unified, per_source=resolved_sources,
@@ -104,17 +119,26 @@ class Pipeline:
         sufficiency = result.sufficiency
         df = result.unified
         scores = {}
-        for model in ("time_correlation", "network", "statml", "benford", "structuring", "behavioral"):
-            if sufficiency[model].status != "BLOCKED":
+        for model in ("time_correlation", "network", "statml", "benford", "structuring", "behavioral", "chain"):
+            verdict = sufficiency[model].status
+            if verdict != "BLOCKED":
                 sc = _m.run_model(model, df, tolerance_minutes=self.tol_minutes,
                                   structuring_threshold=self.structuring_threshold)
                 if sc:
                     scores[model] = sc
+                else:
+                    # honest empty result: the verdict let this model run but
+                    # no events qualified — surface it instead of disappearing
+                    result.warnings.append(
+                        f"{model}: no events qualified for scoring "
+                        f"(verdict {verdict} but empty score set; likely no eligible "
+                        f"cross-source/edge/amount events in the unified frame)"
+                    )
         fusion = self._fuse(scores, df)
         result.model_scores = scores
         result.rankings = fusion.rank
         result.explanations = fusion.explanation
-        result.warnings = [v.reason for v in sufficiency.values() if v.status == "BLOCKED"]
+        result.warnings = [v.reason for v in sufficiency.values() if v.status == "BLOCKED"] + result.warnings
         return result
 
     def _fuse(self, scores, df):

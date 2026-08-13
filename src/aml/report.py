@@ -1,4 +1,4 @@
-"""Report generation (markdown + HTML + PDF + JSON) for a PipelineResult.
+﻿"""Report generation (markdown + HTML + PDF + JSON) for a PipelineResult.
 
 What a human reads from a report is *plain-language findings* — the top
 findings are written as sentences about real people and real records, never
@@ -274,7 +274,7 @@ def _html(res, cfg, charts: Dict[str, Path]) -> str:
         f'<img src="{_b64(img)}">' for title, img in (charts.get("drill") or {}).items())
 
     return f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Anomaly Lens report</title>
+<html><head><meta charset="utf-8"><title>TraceWeave report</title>
 <style>
   body {{ font-family: 'Segoe UI', Helvetica, Arial, sans-serif; color: {NAVY};
          background: linear-gradient(180deg, #e9f8f1 0%, #e6f1f9 55%, #dcedf7 100%);
@@ -375,7 +375,7 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path]) -> Path:
     doc = SimpleDocTemplate(str(path), pagesize=A4,
                             leftMargin=14 * mm, rightMargin=14 * mm,
                             topMargin=12 * mm, bottomMargin=12 * mm,
-                            title="Anomaly Lens report")
+                            title="TraceWeave report")
     styles = getSampleStyleSheet()
     h1 = ParagraphStyle("H1", parent=styles["Title"], textColor=colors.HexColor(NAVY),
                         fontSize=20, spaceAfter=2)

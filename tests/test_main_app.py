@@ -1,4 +1,4 @@
-import os
+﻿import os
 import types
 
 import pandas as pd
@@ -60,7 +60,7 @@ def test_analyze_flow_enables_and_persists(qt_app, synthetic_dir, tmp_path, monk
     from pathlib import Path
     from aml import storage
     monkeypatch.setattr(platformdirs, "user_data_dir",
-                        lambda *a, **k: str(tmp_path / "userdata" / "AnomalyLens"))
+                        lambda *a, **k: str(tmp_path / "userdata" / "TraceWeave"))
     root = storage.results_root()
     win = MainWindow()
 
@@ -93,7 +93,7 @@ def test_history_dialog_lists_runs(qt_app, tmp_path, monkeypatch):
     import platformdirs
     from main_app import HistoryDialog
     monkeypatch.setattr(platformdirs, "user_data_dir",
-                        lambda *a, **k: str(tmp_path / "userdata" / "AnomalyLens"))
+                        lambda *a, **k: str(tmp_path / "userdata" / "TraceWeave"))
     dlg = HistoryDialog([], qt_app.activeModalWidget() or None)
     assert dlg.listw.count() == 0
     dlg.runs = [{"run_id": "r1", "summary": {"events": 10}, "created_at": "t"}]

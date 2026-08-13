@@ -112,15 +112,15 @@
     },
     "E012": {
       "person_type": "surprise",
-      "storyline": "colocation",
-      "note": "call then transfer to E043 within minutes on 6 episodes",
+      "storyline": "fan_io",
+      "note": "fan-in from 10 senders then fan-out to 14 in ~3 days",
       "name": "Omar Meyer",
       "phone": "6393764684531",
       "account": "ACCT3766313",
       "handle": "@omar.meyer873",
       "details": {
-        "type": "colocation",
-        "note": "call then transfer to E043 within minutes on 6 episodes"
+        "type": "fan_io",
+        "note": "fan-in from 10 senders then fan-out to 14 in ~3 days"
       }
     },
     "E013": {
@@ -175,15 +175,15 @@
     },
     "E018": {
       "person_type": "surprise",
-      "storyline": "colocation",
-      "note": "call then transfer to E025 within minutes on 6 episodes",
+      "storyline": "post_burst",
+      "note": "38 posts on one day all mentioning the same 3 handles",
       "name": "Ravi Iqbal",
       "phone": "6396661192619",
       "account": "ACCT6662876",
       "handle": "@ravi.iqbal708",
       "details": {
-        "type": "colocation",
-        "note": "call then transfer to E025 within minutes on 6 episodes"
+        "type": "post_burst",
+        "note": "38 posts on one day all mentioning the same 3 handles"
       }
     },
     "E019": {
@@ -229,14 +229,14 @@
     "E023": {
       "person_type": "surprise",
       "storyline": "colocation",
-      "note": "call then transfer to E089 within minutes on 6 episodes",
+      "note": "call then transfer to E014 within minutes on 6 episodes",
       "name": "Raj Bakker",
       "phone": "6399266159230",
       "account": "ACCT9264923",
       "handle": "@raj.bakker69",
       "details": {
         "type": "colocation",
-        "note": "call then transfer to E089 within minutes on 6 episodes"
+        "note": "call then transfer to E014 within minutes on 6 episodes"
       }
     },
     "E024": {
@@ -262,14 +262,14 @@
     "E026": {
       "person_type": "surprise",
       "storyline": "colocation",
-      "note": "call then transfer to E073 within minutes on 6 episodes",
+      "note": "call then transfer to E060 within minutes on 6 episodes",
       "name": "Grace Mehta",
       "phone": "6396524374754",
       "account": "ACCT6526107",
       "handle": "@grace.mehta418",
       "details": {
         "type": "colocation",
-        "note": "call then transfer to E073 within minutes on 6 episodes"
+        "note": "call then transfer to E060 within minutes on 6 episodes"
       }
     },
     "E027": {
@@ -305,14 +305,14 @@
     "E030": {
       "person_type": "surprise",
       "storyline": "chain",
-      "note": "3-hop layering E030 -> E078 -> E043 -> E027",
+      "note": "3-hop layering E030 -> E028 -> E071 -> E064",
       "name": "Wes Patida",
       "phone": "6393193219824",
       "account": "ACCT3198744",
       "handle": "@wes.patida258",
       "details": {
         "type": "chain",
-        "note": "3-hop layering E030 -> E078 -> E043 -> E027"
+        "note": "3-hop layering E030 -> E028 -> E071 -> E064"
       }
     },
     "E031": {
@@ -327,28 +327,28 @@
     },
     "E032": {
       "person_type": "surprise",
-      "storyline": "fan_io",
-      "note": "fan-in from 14 senders then fan-out to 10 in ~3 days",
+      "storyline": "post_burst",
+      "note": "38 posts on one day all mentioning the same 3 handles",
       "name": "Wes Unger",
       "phone": "6397612651177",
       "account": "ACCT7611993",
       "handle": "@wes.unger422",
       "details": {
-        "type": "fan_io",
-        "note": "fan-in from 14 senders then fan-out to 10 in ~3 days"
+        "type": "post_burst",
+        "note": "38 posts on one day all mentioning the same 3 handles"
       }
     },
     "E033": {
       "person_type": "surprise",
-      "storyline": "colocation",
-      "note": "call then transfer to E052 within minutes on 6 episodes",
+      "storyline": "post_burst",
+      "note": "41 posts on one day all mentioning the same 3 handles",
       "name": "Hugo Gomes",
       "phone": "6392949997381",
       "account": "ACCT2948350",
       "handle": "@hugo.gomes153",
       "details": {
-        "type": "colocation",
-        "note": "call then transfer to E052 within minutes on 6 episodes"
+        "type": "post_burst",
+        "note": "41 posts on one day all mentioning the same 3 handles"
       }
     },
     "E034": {
@@ -504,27 +504,27 @@
     "E049": {
       "person_type": "surprise",
       "storyline": "chain",
-      "note": "3-hop layering E049 -> E055 -> E013 -> E066",
+      "note": "3-hop layering E049 -> E111 -> E054 -> E044",
       "name": "Elena Iqbal",
       "phone": "6393884533779",
       "account": "ACCT3886617",
       "handle": "@elena.iqbal218",
       "details": {
         "type": "chain",
-        "note": "3-hop layering E049 -> E055 -> E013 -> E066"
+        "note": "3-hop layering E049 -> E111 -> E054 -> E044"
       }
     },
     "E050": {
       "person_type": "surprise",
-      "storyline": "chain",
-      "note": "3-hop layering E050 -> E009 -> E107 -> E033",
+      "storyline": "dormant_flip",
+      "note": "dormant 45+ days then sudden deposits + call flurry",
       "name": "Ravi Patida",
       "phone": "6393571852264",
       "account": "ACCT3572512",
       "handle": "@ravi.patida659",
       "details": {
-        "type": "chain",
-        "note": "3-hop layering E050 -> E009 -> E107 -> E033"
+        "type": "dormant_flip",
+        "note": "dormant 45+ days then sudden deposits + call flurry"
       }
     },
     "E051": {
@@ -540,14 +540,14 @@
     "E052": {
       "person_type": "surprise",
       "storyline": "chain",
-      "note": "3-hop layering E052 -> E070 -> E007 -> E055",
+      "note": "3-hop layering E052 -> E056 -> E004 -> E094",
       "name": "Xin Novak",
       "phone": "6396741162230",
       "account": "ACCT6742832",
       "handle": "@xin.novak87",
       "details": {
         "type": "chain",
-        "note": "3-hop layering E052 -> E070 -> E007 -> E055"
+        "note": "3-hop layering E052 -> E056 -> E004 -> E094"
       }
     },
     "E053": {
@@ -702,15 +702,15 @@
     },
     "E068": {
       "person_type": "surprise",
-      "storyline": "colocation",
-      "note": "call then transfer to E037 within minutes on 6 episodes",
+      "storyline": "post_burst",
+      "note": "42 posts on one day all mentioning the same 3 handles",
       "name": "Wes Yamamoto",
       "phone": "6392786049101",
       "account": "ACCT2787653",
       "handle": "@wes.yamamoto571",
       "details": {
-        "type": "colocation",
-        "note": "call then transfer to E037 within minutes on 6 episodes"
+        "type": "post_burst",
+        "note": "42 posts on one day all mentioning the same 3 handles"
       }
     },
     "E069": {
@@ -796,14 +796,14 @@
     "E077": {
       "person_type": "surprise",
       "storyline": "structuring",
-      "note": "50 deposits clustered just under 10,000",
+      "note": "56 deposits clustered just under 10,000",
       "name": "Noah Bakker",
       "phone": "6396618481188",
       "account": "ACCT6613607",
       "handle": "@noah.bakker771",
       "details": {
         "type": "structuring",
-        "note": "50 deposits clustered just under 10,000"
+        "note": "56 deposits clustered just under 10,000"
       }
     },
     "E078": {
@@ -939,40 +939,40 @@
     "E091": {
       "person_type": "storyline",
       "storyline": "colocation",
-      "note": "call then transfer to E094 within minutes on 6 episodes",
+      "note": "call then transfer to E096 within minutes on 6 episodes",
       "name": "Sara Patida",
       "phone": "6395482349590",
       "account": "ACCT5481653",
       "handle": "@sara.patida920",
       "details": {
         "type": "colocation",
-        "note": "call then transfer to E094 within minutes on 6 episodes"
+        "note": "call then transfer to E096 within minutes on 6 episodes"
       }
     },
     "E092": {
       "person_type": "storyline",
       "storyline": "colocation",
-      "note": "call then transfer to E018 within minutes on 6 episodes",
+      "note": "call then transfer to E007 within minutes on 6 episodes",
       "name": "Uma Iqbal",
       "phone": "6391262532210",
       "account": "ACCT1264750",
       "handle": "@uma.iqbal994",
       "details": {
         "type": "colocation",
-        "note": "call then transfer to E018 within minutes on 6 episodes"
+        "note": "call then transfer to E007 within minutes on 6 episodes"
       }
     },
     "E093": {
       "person_type": "storyline",
       "storyline": "colocation",
-      "note": "call then transfer to E091 within minutes on 6 episodes",
+      "note": "call then transfer to E075 within minutes on 6 episodes",
       "name": "Tomas Alvarez",
       "phone": "6398835521644",
       "account": "ACCT8831659",
       "handle": "@tomas.alvarez791",
       "details": {
         "type": "colocation",
-        "note": "call then transfer to E091 within minutes on 6 episodes"
+        "note": "call then transfer to E075 within minutes on 6 episodes"
       }
     },
     "E094": {
@@ -1017,14 +1017,14 @@
     "E097": {
       "person_type": "storyline",
       "storyline": "structuring",
-      "note": "54 deposits clustered just under 10,000",
+      "note": "53 deposits clustered just under 10,000",
       "name": "Ben Okafor",
       "phone": "6391906276722",
       "account": "ACCT1905135",
       "handle": "@ben.okafor341",
       "details": {
         "type": "structuring",
-        "note": "54 deposits clustered just under 10,000"
+        "note": "53 deposits clustered just under 10,000"
       }
     },
     "E098": {
@@ -1043,40 +1043,40 @@
     "E099": {
       "person_type": "storyline",
       "storyline": "structuring",
-      "note": "62 deposits clustered just under 10,000",
+      "note": "50 deposits clustered just under 10,000",
       "name": "Ravi Lopes",
       "phone": "6397379363326",
       "account": "ACCT7378242",
       "handle": "@ravi.lopes788",
       "details": {
         "type": "structuring",
-        "note": "62 deposits clustered just under 10,000"
+        "note": "50 deposits clustered just under 10,000"
       }
     },
     "E100": {
       "person_type": "storyline",
       "storyline": "fan_io",
-      "note": "fan-in from 8 senders then fan-out to 12 in ~3 days",
+      "note": "fan-in from 9 senders then fan-out to 10 in ~3 days",
       "name": "Sara ElSayed",
       "phone": "6393948350368",
       "account": "ACCT3948941",
       "handle": "@sara.elsayed134",
       "details": {
         "type": "fan_io",
-        "note": "fan-in from 8 senders then fan-out to 12 in ~3 days"
+        "note": "fan-in from 9 senders then fan-out to 10 in ~3 days"
       }
     },
     "E101": {
       "person_type": "storyline",
       "storyline": "fan_io",
-      "note": "fan-in from 9 senders then fan-out to 12 in ~3 days",
+      "note": "fan-in from 11 senders then fan-out to 9 in ~3 days",
       "name": "Ava Haddad",
       "phone": "6398263657144",
       "account": "ACCT8266091",
       "handle": "@ava.haddad574",
       "details": {
         "type": "fan_io",
-        "note": "fan-in from 9 senders then fan-out to 12 in ~3 days"
+        "note": "fan-in from 11 senders then fan-out to 9 in ~3 days"
       }
     },
     "E102": {
@@ -1095,79 +1095,118 @@
     "E103": {
       "person_type": "storyline",
       "storyline": "silence",
-      "note": "large debit (~565,575) then zero activity thereafter",
+      "note": "large debit (~477,891) then zero activity thereafter",
       "name": "Priya Mehta",
       "phone": "6398335896624",
       "account": "ACCT8339337",
       "handle": "@priya.mehta732",
       "details": {
         "type": "silence",
-        "note": "large debit (~565,575) then zero activity thereafter"
+        "note": "large debit (~477,891) then zero activity thereafter"
       }
     },
     "E104": {
       "person_type": "storyline",
       "storyline": "silence",
-      "note": "large debit (~715,050) then zero activity thereafter",
+      "note": "large debit (~469,506) then zero activity thereafter",
       "name": "Priya Haddad",
       "phone": "6395673426689",
       "account": "ACCT5677284",
       "handle": "@priya.haddad205",
       "details": {
         "type": "silence",
-        "note": "large debit (~715,050) then zero activity thereafter"
+        "note": "large debit (~469,506) then zero activity thereafter"
       }
     },
     "E105": {
       "person_type": "storyline",
       "storyline": "silence",
-      "note": "large debit (~446,857) then zero activity thereafter",
+      "note": "large debit (~282,575) then zero activity thereafter",
       "name": "Nia Chen",
       "phone": "6393827961578",
       "account": "ACCT3826568",
       "handle": "@nia.chen966",
       "details": {
         "type": "silence",
-        "note": "large debit (~446,857) then zero activity thereafter"
+        "note": "large debit (~282,575) then zero activity thereafter"
       }
     },
     "E106": {
       "person_type": "storyline",
       "storyline": "chain",
-      "note": "3-hop layering E106 -> E065 -> E105 -> E107",
+      "note": "3-hop layering E106 -> E034 -> E045 -> E087",
       "name": "Leo Alvarez",
       "phone": "6393896008935",
       "account": "ACCT3899022",
       "handle": "@leo.alvarez896",
       "details": {
         "type": "chain",
-        "note": "3-hop layering E106 -> E065 -> E105 -> E107"
+        "note": "3-hop layering E106 -> E034 -> E045 -> E087"
       }
     },
     "E107": {
       "person_type": "storyline",
       "storyline": "chain",
-      "note": "3-hop layering E107 -> E036 -> E048 -> E075",
+      "note": "3-hop layering E107 -> E014 -> E078 -> E023",
       "name": "Priya Lopes",
       "phone": "6394407328534",
       "account": "ACCT4408460",
       "handle": "@priya.lopes965",
       "details": {
         "type": "chain",
-        "note": "3-hop layering E107 -> E036 -> E048 -> E075"
+        "note": "3-hop layering E107 -> E014 -> E078 -> E023"
       }
     },
     "E108": {
       "person_type": "storyline",
       "storyline": "chain",
-      "note": "3-hop layering E108 -> E022 -> E005 -> E008",
+      "note": "3-hop layering E108 -> E081 -> E109 -> E102",
       "name": "Xin Haddad",
       "phone": "6396857425184",
       "account": "ACCT6854826",
       "handle": "@xin.haddad886",
       "details": {
         "type": "chain",
-        "note": "3-hop layering E108 -> E022 -> E005 -> E008"
+        "note": "3-hop layering E108 -> E081 -> E109 -> E102"
+      }
+    },
+    "E109": {
+      "person_type": "storyline",
+      "storyline": "post_burst",
+      "note": "43 posts on one day all mentioning the same 3 handles",
+      "name": "Kai Yamamoto",
+      "phone": "6395847395997",
+      "account": "ACCT5847325",
+      "handle": "@kai.yamamoto689",
+      "details": {
+        "type": "post_burst",
+        "note": "43 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E110": {
+      "person_type": "storyline",
+      "storyline": "post_burst",
+      "note": "50 posts on one day all mentioning the same 3 handles",
+      "name": "Elena Patida",
+      "phone": "6391373118060",
+      "account": "ACCT1379229",
+      "handle": "@elena.patida998",
+      "details": {
+        "type": "post_burst",
+        "note": "50 posts on one day all mentioning the same 3 handles"
+      }
+    },
+    "E111": {
+      "person_type": "storyline",
+      "storyline": "post_burst",
+      "note": "45 posts on one day all mentioning the same 3 handles",
+      "name": "Nia Carlos",
+      "phone": "6395502672884",
+      "account": "ACCT5509617",
+      "handle": "@nia.carlos942",
+      "details": {
+        "type": "post_burst",
+        "note": "45 posts on one day all mentioning the same 3 handles"
       }
     }
   },

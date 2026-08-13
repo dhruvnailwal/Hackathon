@@ -21,7 +21,9 @@ def test_bank_only():
     assert v["structuring"].status == VERDICT_SUPPORTED
     assert v["statml"].status == VERDICT_SUPPORTED
     assert v["network"].status == VERDICT_DEGRADED
-    assert v["time_correlation"].status == VERDICT_SUPPORTED
+    # single source: merge_asof cross-source model cannot run -> DEGRADED,
+    # not a silent SUPPORTED-with-no-scores
+    assert v["time_correlation"].status == VERDICT_DEGRADED
     assert v["behavioral"].status == VERDICT_SUPPORTED
 
 
@@ -54,18 +56,30 @@ def test_multisource_network_supported():
     ])
     v = engine.evaluate()
     assert v["network"].status == VERDICT_SUPPORTED
+    assert v["time_correlation"].status == VERDICT_SUPPORTED
 
 
-def test_low_volume_degrades_time_correlation():
+def test_low_volume_blocks_entity_stages():
+    # §1B failure-mode contract: <30 rows/entity -> C/D/E BLOCKED
     engine = SufficiencyEngine(
-        [_rs("bank", ["timestamp", "amount"], n_rows=40, n_entities=30)],
+        [_rs("bank", ["timestamp", "amount", "counterparty"], n_rows=40, n_entities=30)],
         min_events_per_entity=30,
     )
     v = engine.evaluate()
-    assert v["time_correlation"].status == VERDICT_DEGRADED
+    assert v["time_correlation"].status == VERDICT_BLOCKED
+    assert v["statml"].status == VERDICT_BLOCKED
+    assert v["network"].status == VERDICT_BLOCKED
+    assert v["benford"].status == VERDICT_BLOCKED
 
 
 def test_empty_inputs_block_entity_resolution():
     engine = SufficiencyEngine([])
     v = engine.evaluate()
     assert v["entity_resolution"].status == VERDICT_BLOCKED
+
+
+def test_no_counterparty_honest_entity_resolution():
+    # entity_resolution must not claim "counterparty resolved" when absent
+    engine = SufficiencyEngine([_rs("bank", ["timestamp", "amount"])])
+    v = engine.evaluate()
+    assert v["entity_resolution"].status == VERDICT_DEGRADED

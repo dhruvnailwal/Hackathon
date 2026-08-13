@@ -117,53 +117,60 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
 # ===========================================================================
 # C — time correlation (merge_asof colocation)
 # ===========================================================================
-def fit_time_correlation(df: pd.DataFrame, tolerance_minutes: int = 25,
+def fit_time_correlation(df: pd.DataFrame, tolerance_minutes: int = 30,
                          min_episodes: int = 3) -> Dict[str, float]:
-    """merge_asof colocation: a person calls/email then transfers within tolerance.
-    Score ramps on sincere SAME-party episodes (plan demo "call 09:12, transfer 09:24")."""
+    """merge_asof colocation: a person calls/posts then transfers within tolerance.
+
+    Only *same-party* episodes count (call to X, then transfer to X). The old
+    code also gave a 0.2 bump for any call-then-transfer to *different*
+    parties, which flooded the score set with 86 background entities at 0.2 —
+    every active person occasionally calls then transfers to someone else.
+    Each distinct matched transfer counts once (a call storm around one
+    transfer is one episode, not six).
+    """
     bank = df[df["source"] == "bank"].copy()
-    cdr = df[df["source"] != "bank"].copy()
-    if bank.empty or cdr.empty:
+    call = df[df["source"].isin(("cdr", "social"))].copy()
+    if bank.empty or call.empty:
         return {}
     bank = bank.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
-    cdr = cdr.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
+    call = call.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
     bank["ts"] = pd.to_datetime(bank["timestamp"])
-    cdr["ts"] = pd.to_datetime(cdr["timestamp"])
-    bank = bank.sort_values("ts")
-    cdr = cdr.sort_values("ts")
+    call["ts"] = pd.to_datetime(call["timestamp"])
+    # keep the original row index so a burst of calls around ONE transfer is
+    # counted as a single episode (distinct matched transfers), not six
+    bank = bank.sort_values("ts").reset_index()
+    call = call.sort_values("ts").reset_index()
     matched = pd.merge_asof(
-        cdr, bank, on="ts", direction="forward",
+        call, bank, on="ts", direction="forward",
         tolerance=pd.Timedelta(minutes=tolerance_minutes), suffixes=("_x", "_y"),
     )
     matched = matched[matched["entity_id_y"].notna()]
     if matched.empty:
         return {}
-    same = (matched["counterparty_id_x"] == matched["counterparty_id_y"]).to_numpy()
-    out = {}
-    for eid in set(matched["entity_id_x"]):
-        s = int(same[matched["entity_id_x"].to_numpy() == eid].sum())
-        t = int((~same)[matched["entity_id_x"].to_numpy() == eid].sum())
-        if s >= min_episodes:
-            out[eid] = min(s / float(min_episodes), 1.0)
-        elif t > 0:
-            out[eid] = 0.2 * min(t / 3.0, 1.0) + (0.3 * s / float(min_episodes))
-    return out
+    matched["same_party"] = matched["counterparty_id_x"] == matched["counterparty_id_y"]
+    eps = (matched[matched["same_party"]]
+           .groupby("entity_id_x")["index_y"].nunique())
+    if eps.empty:
+        return {}
+    return {eid: min(eps / float(min_episodes), 1.0)
+            for eid, eps in eps.items()}
 
 
-def fit_time_correlation_backward(df: pd.DataFrame, tolerance_minutes: int = 25,
+def fit_time_correlation_backward(df: pd.DataFrame, tolerance_minutes: int = 30,
                                   min_episodes: int = 3) -> Dict[str, float]:
     """Reverse colocation: transfer lands, then a call to the same party.
-    Picks up 'call after transfer' laundering choreography."""
+    Picks up 'call after transfer' laundering choreography. Same-party-only,
+    distinct-episode counting as in fit_time_correlation."""
     bank = df[df["source"] == "bank"].copy()
-    cdr = df[df["source"] != "bank"].copy()
+    cdr = df[df["source"].isin(("cdr", "social"))].copy()
     if bank.empty or cdr.empty:
         return {}
     bank = bank.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
     cdr = cdr.dropna(subset=["timestamp", "entity_id", "counterparty_id"])
     bank["ts"] = pd.to_datetime(bank["timestamp"])
     cdr["ts"] = pd.to_datetime(cdr["timestamp"])
-    bank = bank.sort_values("ts")
-    cdr = cdr.sort_values("ts")
+    bank = bank.sort_values("ts").reset_index()
+    cdr = cdr.sort_values("ts").reset_index()
     matched = pd.merge_asof(
         bank, cdr, on="ts", direction="forward",
         tolerance=pd.Timedelta(minutes=tolerance_minutes), suffixes=("_x", "_y"),
@@ -171,16 +178,13 @@ def fit_time_correlation_backward(df: pd.DataFrame, tolerance_minutes: int = 25,
     matched = matched[matched["entity_id_y"].notna()]
     if matched.empty:
         return {}
-    same = (matched["counterparty_id_x"] == matched["counterparty_id_y"]).to_numpy()
-    out = {}
-    for eid in set(matched["entity_id_x"]):
-        s = int(same[matched["entity_id_x"].to_numpy() == eid].sum())
-        t = int((~same)[matched["entity_id_x"].to_numpy() == eid].sum())
-        if s >= min_episodes:
-            out[eid] = min(s / float(min_episodes), 1.0)
-        elif t > 0:
-            out[eid] = 0.2 * min(t / 3.0, 1.0) + (0.3 * s / float(min_episodes))
-    return out
+    matched["same_party"] = matched["counterparty_id_x"] == matched["counterparty_id_y"]
+    eps = (matched[matched["same_party"]]
+           .groupby("entity_id_x")["index_y"].nunique())
+    if eps.empty:
+        return {}
+    return {eid: min(eps / float(min_episodes), 1.0)
+            for eid, eps in eps.items()}
 
 
 def fit_time_correlation_anypair(df: pd.DataFrame, tolerance_minutes: int = 25,
@@ -271,10 +275,11 @@ def _feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
     if feats.empty or feats.shape[0] < 5:
         return pd.DataFrame()
     X = feats[[c for c in feats.columns if c != "entity_id"]].copy()
+    X = X.astype(float)
     for c in _EVID_FEATURES:
         if c in X:
             X[c] = np.log1p(X[c].clip(lower=0))
-    X = X.astype(float).apply(lambda s: (s - s.mean()) / (s.std() + EPS))
+    X = X.apply(lambda s: (s - s.mean()) / (s.std() + EPS))
     X = np.nan_to_num(X.to_numpy(), nan=0.0, posinf=0.0, neginf=0.0)
     return pd.DataFrame(X, index=feats.index)
 
@@ -936,35 +941,163 @@ def fit_structuring(df: pd.DataFrame, threshold: float = 10000.0, band: float = 
 # H — behavioral regime flips: dormancy + silence-after-large-txn
 # ===========================================================================
 def fit_behavioral(df: pd.DataFrame, dormant_gap_days: float = 45.0,
-                   silence_amt_q: float = 0.995, silence_days: float = 15.0) -> Dict[str, float]:
-    amt_all = df.dropna(subset=["amount"])["amount"]
-    big_threshold = float(amt_all.quantile(silence_amt_q)) if not amt_all.empty else 1e12
-    out = {}
+                   silence_amt_q: float = 0.99, silence_days: float = 15.0) -> Dict[str, float]:
+    """Regime-flip scoring: dormancy and silence-after-large-transfer.
+
+    Three signals, each person- AND population-relative so ordinary-but-quiet
+    people don't flood the score set (the old version scored 42 entities at
+    ~1.0 and buried the true dormant/silence entities at rank 19+):
+
+    1. cold-start flip (dormant_flip storyline): the person's bank activity
+       begins very late in the observation window (>= dormant_gap_days after
+       the window opens) and then a burst of >= 3 credits lands inside the
+       final dormant_gap_days — i.e. "dead account, suddenly alive".
+    2. mid-life dormancy: a quiet stretch of >= dormant_gap_days in the middle
+       of an otherwise active life, when the gap is also a strong outlier
+       (>= 5x the person's own median gap).
+    3. silence tail: a person-relative extreme debit (>= max(population
+       silence_amt_q quantile, 20x the person's median amount)) is the very
+       last thing they did (<= 2 days before their final event) and they then
+       stay completely quiet for >= silence_days up to the window end.
+    """
+    ts_col = pd.to_datetime(df["timestamp"], errors="coerce")
+    bank_all = df[df["source"] == "bank"]
+    bank_ts = pd.to_datetime(bank_all["timestamp"], errors="coerce")
+    if ts_col.dropna().empty:
+        return {}
+    # the *financial* window — regime flips are judged against bank activity
+    # (the global window can stretch years if a social/legacy file is old)
+    if bank_ts.dropna().empty:
+        return {}
+    win_start, win_end = bank_ts.min(), bank_ts.max()
+    amt_all = pd.to_numeric(df["amount"], errors="coerce")
+    amt_all = amt_all[amt_all > 0]
+    big_threshold_pop = float(amt_all.quantile(silence_amt_q)) if not amt_all.empty else 1e12
+
+    raw: Dict[str, float] = {}
     for eid, sub in df.groupby("entity_id"):
-        b = sub.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
-        n = len(b)
+        sub = sub.dropna(subset=["timestamp"]).sort_values("timestamp")
+        n = len(sub)
         if n < 3:
             continue
+        ts = pd.to_datetime(sub["timestamp"])
+        bank = sub[sub["source"] == "bank"]
         score = 0.0
-        # dormancy: long quiet stretch in the middle of an otherwise active life
+
+        # 1. cold-start flip ------------------------------------------------
+        if not bank.empty and n >= 5:
+            bank_ts = pd.to_datetime(bank["timestamp"])
+            first_bank = bank_ts.min()
+            cold_lag_days = (first_bank - win_start).total_seconds() / 86400.0
+            if cold_lag_days >= dormant_gap_days:
+                recent = bank[bank_ts >= (win_end - pd.Timedelta(days=dormant_gap_days))]
+                amt_r = pd.to_numeric(recent["amount"], errors="coerce")
+                credits = int((amt_r > 0).sum()) if not amt_r.empty else 0
+                if credits >= 3:
+                    score = max(score, min(0.5 + cold_lag_days / 200.0, 1.0))
+
+        # 2. mid-life dormancy ---------------------------------------------
         if n >= 15:
-            gaps = b["timestamp"].diff().dt.total_seconds().dropna() / 86400.0
-            if not gaps.empty and gaps.max() >= dormant_gap_days:
+            gaps = ts.diff().dt.total_seconds().dropna() / 86400.0
+            med_gap = float(gaps.median()) if not gaps.empty else 0.0
+            if not gaps.empty and gaps.max() >= dormant_gap_days \
+                    and gaps.max() >= 5.0 * med_gap:
                 pos = int(gaps.argmax())  # event index BEFORE the long gap
-                if pos >= 2 and pos < n - 2:
+                if 2 <= pos < n - 2:
                     score = max(score, min(0.4 + gaps.max() / 90.0, 1.0))
-        # silence-after-large-txn: absolute population-level big amount then quiet
-        amt = b.dropna(subset=["amount"])
-        if not amt.empty:
-            big = amt[amt["amount"] >= big_threshold]
-            if not big.empty:
-                last_big = big["timestamp"].max()
-                days_after = (b["timestamp"].iloc[-1] - last_big).total_seconds() / 86400.0
-                if days_after >= silence_days:
-                    score = max(score, min(0.5 + days_after / 40.0, 1.0))
+
+        # 3. silence tail ----------------------------------------------------
+        if not bank.empty:
+            amt = pd.to_numeric(bank["amount"], errors="coerce")
+            pos_amt = amt[amt > 0]
+            if not pos_amt.empty:
+                med = float(pos_amt.median())
+                thr = max(big_threshold_pop, 20.0 * med)
+                big = bank[amt >= thr]
+                if not big.empty:
+                    last_big = pd.to_datetime(big["timestamp"]).max()
+                    last_ev = ts.max()
+                    days_after_big = (last_ev - last_big).total_seconds() / 86400.0
+                    tail_quiet = (win_end - last_ev).total_seconds() / 86400.0
+                    if days_after_big <= 2.0 and tail_quiet >= silence_days and n >= 10:
+                        score = max(score, min(0.4 + tail_quiet / 45.0, 1.0))
         if score > 0.0:
-            out[eid] = score
-    return out
+            raw[eid] = score
+
+    # raw scores are already calibrated (0..1, ramping on lag/gap/tail size);
+    # do NOT min-max spread them — with a narrow firing band that collapses
+    # every true hit to 0.0 and hands 1.0 to a single lucky entity
+    return raw
+
+
+# ===========================================================================
+# H — chain / layering detector (multi-hop rapid transfer paths)
+# ===========================================================================
+def fit_chain(df: pd.DataFrame, min_hops: int = 3, hop_days: float = 7.0,
+              amount_x: float = 10.0, min_amount: float = 10000.0) -> Dict[str, float]:
+    """Layering chains: A -> B -> C -> D rapid transfers.
+
+    A "layering hop" is a debit whose amount is a person-relative extreme
+    (>= amount_x x the entity's own median amount) AND above a population
+    floor (>= min_amount and >= p90 of all amounts). Chains are directed
+    paths of >= min_hops consecutive such hops where every consecutive pair
+    of edges lands within ``hop_days`` of each other — the classic
+    "money in, straight out, split" propagation.
+
+    Every entity on a chain is scored; deeper chains and amount-extreme hops
+    score higher, then the set is min-max spread so the strongest chains
+    dominate (a random two-hop coincidence on a background account cannot
+    compete with a 3+ hop layering path).
+    """
+    edges = df[df["source"] == "bank"].dropna(
+        subset=["entity_id", "counterparty_id", "timestamp", "amount"]).copy()
+    if edges.empty:
+        return {}
+    edges["ts"] = pd.to_datetime(edges["timestamp"])
+    amt = pd.to_numeric(edges["amount"], errors="coerce")
+    edges["amount"] = amt
+    edges = edges[edges["amount"] > 0]
+    if edges.empty:
+        return {}
+    p90 = float(edges["amount"].quantile(0.90))
+    med = edges.groupby("entity_id")["amount"].median()
+    edges["big"] = (edges["amount"] >= min_amount) & \
+        (edges["amount"] >= p90) & \
+        (edges["amount"] >= amount_x * edges["entity_id"].map(med))
+
+    big = edges[edges["big"]]
+    if len(big) < min_hops:
+        return {}
+    out_edges: Dict[str, List[tuple]] = defaultdict(list)
+    for row in big.itertuples():
+        out_edges[row.entity_id].append((row.counterparty_id, row.ts, row.amount))
+    hop = pd.Timedelta(days=hop_days)
+
+    chains: List[tuple] = []  # (node_path, hop_amounts)
+
+    def dfs(node: str, ts: pd.Timestamp, path: List[str], amts: List[float]):
+        extended = False
+        for dst, nxt_ts, amt_ in out_edges.get(node, ()):
+            if abs((nxt_ts - ts).total_seconds()) <= hop.total_seconds():
+                dfs(dst, nxt_ts, path + [dst], amts + [amt_])
+                extended = True
+        if not extended and len(path) >= min_hops:
+            chains.append((tuple(path), tuple(amts)))
+
+    for src in list(out_edges):
+        for dst, nxt_ts, amt_ in out_edges[src]:
+            dfs(dst, nxt_ts, [src, dst], [amt_])
+    if not chains:
+        return {}
+
+    best: Dict[str, float] = {}
+    for path, amts in chains:
+        depth = len(path) - 1
+        depth_score = min(1.0, 0.5 + depth / (2.0 * min_hops))
+        for node, amt_ in zip(path, amts):
+            amt_score = min(1.0, amt_ / (20.0 * min_amount))
+            best[node] = max(best.get(node, 0.0), depth_score * (0.6 + 0.4 * amt_score))
+    return _minmax(pd.Series(best)).to_dict()
 
 
 # ===========================================================================
@@ -1027,6 +1160,8 @@ class Fusion:
             parts.append("structuring model: repeated amounts clustered just under the reporting threshold")
         if "behavioral" in fired:
             parts.append("behavioral model: dormancy duration or silence-after-large-transfer regime flip")
+        if "chain" in fired:
+            parts.append("chain model: money moved through a rapid multi-hop transfer path (layering)")
         if not parts[1:]:
             parts.append("aggregate marginal elevation across models")
         return ". ".join(parts)
@@ -1372,7 +1507,7 @@ def fit_network_tgn(df: pd.DataFrame, buckets: int = 8, hidden: int = 32,
 # ===========================================================================
 # dispatch used by the pipeline
 # ===========================================================================
-def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
+def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 30,
               structuring_threshold: float = 10000.0) -> Dict[str, float]:
     if name == "time_correlation":
         return fit_time_correlation(df, tolerance_minutes)
@@ -1438,4 +1573,6 @@ def run_model(name: str, df: pd.DataFrame, tolerance_minutes: int = 25,
         return fit_structuring_banded(df, threshold=structuring_threshold)
     if name == "behavioral":
         return fit_behavioral(df)
+    if name == "chain":
+        return fit_chain(df)
     return {}

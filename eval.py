@@ -116,8 +116,13 @@ def main():
 
     truth = load_truth(args.key)
     truth = map_truth_to_entities(truth, res.entity_map)
+    # the main answer key ALSO records surprise persons (for the generator's
+    # single write); the surprise hold-out is evaluated separately below, so
+    # exclude it here — otherwise the surprise set leaks into the "predefined
+    # storyline" metrics and inflates recall/precision
+    main_truth = truth[truth["type"] != "surprise"]
 
-    truth_anom, truth_type = to_records(res.rankings, truth)
+    truth_anom, truth_type = to_records(res.rankings, main_truth)
     metrics = recall_precision(res.rankings, truth_anom, truth_type)
 
     # ---- surprise hold-out set -----------------------------------------
@@ -189,7 +194,10 @@ def main():
     if surprise_metrics:
         overlap = len(truth_anom & surp_anom)
         print(f"SURPRISE HOLD-OUT  (mapped {surprise_n_mapped} of {surprise_n_total} "
-              f"surprise entities; {overlap} shared with main key)")
+              f"surprise entities)")
+        if overlap:
+            print(f"  WARNING: {overlap} surprise entities also appear as main-key "
+                  f"anomalies (generator overlap, not a pipeline issue)")
         for k, v in surprise_metrics.items():
             if k == "type_recall@10":
                 print("  recall@10 by type:")
@@ -222,6 +230,18 @@ def main():
         hit = sum(1 for e in top10 if e in truth_anom)
         print(f"  -{model:16s} recall@10={hit/max(len(truth_anom),1):.3f}  "
               f"(full={full_metrics['recall@10']:.3f})")
+
+    # ---- H1 check: standalone per-model recall@10 ---------------------
+    print("=" * 60)
+    print("H1 CHECK (standalone per-model recall@10; plan §3 says no single "
+          "model should exceed ~0.7)")
+    for model, scores in res.model_scores.items():
+        ranking = sorted(scores.items(), key=lambda kv: -kv[1])
+        top10 = [e for e, _ in ranking[:10]]
+        hit = sum(1 for e in top10 if e in truth_anom)
+        r10 = hit / max(len(truth_anom), 1)
+        marker = "  <-- exceeds 0.7 (H1 violated)" if r10 > 0.7 else ""
+        print(f"  {model:16s} recall@10={r10:.3f}{marker}")
 
 
 if __name__ == "__main__":
