@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFAP — Title Slide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg, #f9fdfb 0%, #e6f3ec 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .slide {
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(47,174,143,0.35);
+    border-radius: 28px;
+    box-shadow: 0 24px 60px rgba(30,80,60,0.15);
+    max-width: 1100px;
+    width: 100%;
+    padding: 70px 80px;
+    text-align: center;
+  }
+  .badge {
+    display: inline-block;
+    background: #e6f6ee;
+    color: #1e7f63;
+    border: 1px solid #bfe5d3;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    padding: 8px 22px;
+    margin-bottom: 30px;
+  }
+  h1 {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #16342a;
+    margin-bottom: 18px;
+  }
+  .subtitle {
+    font-size: 26px;
+    font-weight: 600;
+    color: #2f8f72;
+    margin-bottom: 44px;
+  }
+  .fullname {
+    font-size: 20px;
+    font-weight: 500;
+    color: #4a6b5e;
+    line-height: 1.55;
+    max-width: 850px;
+    margin: 0 auto 48px auto;
+  }
+  .hook {
+    font-size: 58px;
+    font-weight: 900;
+    color: #16342a;
+    margin-bottom: 14px;
+  }
+  .nameblock { margin-bottom: 40px; }
+  .name {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #1e7f63;
+  }
+  .nametag {
+    font-size: 16px;
+    font-weight: 700;
+    color: #6d8d82;
+    letter-spacing: 1px;
+    margin-top: 6px;
+  }
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 56px;
+    border-top: 1px solid #dfece4;
+    padding-top: 36px;
+  }
+  .stat .num {
+    font-size: 42px;
+    font-weight: 900;
+    color: #16342a;
+  }
+  .stat .lbl {
+    font-size: 15px;
+    font-weight: 700;
+    color: #6d8d82;
+    margin-top: 6px;
+  }
+  .footer {
+    margin-top: 40px;
+    font-size: 14px;
+    color: #8fa89f;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+  <div class="slide">
+    <div class="badge">HACKATHON PROJECT</div>
+    <h1 class="hook">$2 Trillion is Laundered Every Year</h1>
+    <div class="subtitle">— and it hides between your systems, not inside them</div>
+    <div class="fullname">
+      A call 19 minutes before a transfer. A social post before a deposit.
+      No single-source monitor sees the link.
+    </div>
+    <div class="nameblock">
+      <div class="name">DFAP</div>
+      <div class="nametag">Digital Footprint Analytics Platform</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num">3</div><div class="lbl">Data Sources</div></div>
+      <div class="stat"><div class="num">7</div><div class="lbl">Model Families</div></div>
+      <div class="stat"><div class="num">90%</div><div class="lbl">Precision@10</div></div>
+      <div class="stat"><div class="num">431</div><div class="lbl">Entities Resolved</div></div>
+    </div>
+  </div>
+</body>
+</html>
