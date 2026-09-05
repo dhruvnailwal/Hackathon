@@ -8,3 +8,5 @@ matplotlib>=3.7
 reportlab>=4.0
 platformdirs>=3.0
 pypdf>=3.0
+PyYAML>=6.0
+torch>=2.14
