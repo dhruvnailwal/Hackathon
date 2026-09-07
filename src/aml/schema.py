@@ -153,6 +153,15 @@ ACTOR_ID_ALIASES: Dict[str, List[str]] = {
         "party_id", "iban", "account", "account_id", "account_number", "account_no",
         "acct", "acct_id", "msisdn", "caller_msisdn", "originating_number", "caller", "user_id",
         "device_id", "device", "handle", "user_handle", "username", "user_name",
+        # sender/originator-side aliases (peer-to-peer transfer exports name
+        # the "self" column this way instead of "account" — PaySim's
+        # nameOrig is the case that exposed this gap: with none of these,
+        # it fell through to the counterparty content-probe and the actor
+        # dimension silently disappeared)
+        "nameorig", "name_orig", "orig", "origin_id", "originator", "originator_id",
+        "sender", "sender_id", "sender_account", "payer", "payer_id", "payer_account",
+        "debtor", "debtor_account", "remitter", "remitter_id", "from_account",
+        "source_account", "drawer",
         "cuenta", "numero_cuenta", "nro_cuenta", "no_cuenta", "cuenta_id", "cliente", "cliente_id",
         "numero_de_cuenta", "titular", "cuenta_bancaria",
         "compte", "numero_compte", "titulaire", "kontonummer", "konto", "kontoinhaber",

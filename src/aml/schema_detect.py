@@ -310,10 +310,18 @@ def _content_probe(col: pd.Series, probe_cfg: ProbeConfig = ProbeConfig()) -> Tu
         if big:
             return "event_type", "numeric-code"
 
-    # 8. name-ish: two tokens of alphabetic words
+    # 8. name-ish: two tokens of alphabetic words. The pattern alone isn't
+    #    enough — a low-cardinality categorical column (e.g. currency names
+    #    like "UK pounds" / "US Dollar") matches the same two-word shape and
+    #    was previously misclassified as a person-name column, which risks
+    #    spurious cross-source name-merges in entity_resolve.py. Real name
+    #    columns vary a lot more than a handful of repeated category labels,
+    #    so also require a minimum distinctness among the sampled values.
     two_words = sample.str.match(r"^[A-Za-z]+\s+[A-Za-z]+$").mean()
     if two_words > 0.7:
-        return "actor_name", "name-pattern"
+        distinct_ratio = sample.nunique() / len(sample)
+        if sample.nunique() >= 5 and distinct_ratio > 0.15:
+            return "actor_name", "name-pattern"
 
     if sample.str.startswith("@").mean() > 0.7:
         return "actor_handle", "handle-pattern"

@@ -68,6 +68,41 @@ def test_actor_columns_kept_separate_from_counterparty():
     assert "actor_name" not in slots
 
 
+def test_sender_style_header_resolves_actor_id():
+    """A peer-to-peer transfer export names its 'self' column something like
+    nameOrig/sender_account rather than 'account' — this used to fall
+    through header matching, hit the counterparty content-probe fallback
+    (which never produces actor_id), and collide with the receiver column,
+    silently losing the entity dimension entirely (found via real-world
+    PaySim/SAML-D validation)."""
+    df = pd.DataFrame({
+        "txn_datetime": pd.date_range("2024-01-01", periods=10, freq="h"),
+        "amount": RNG.uniform(1, 500, 10).round(2),
+        "nameOrig": [f"C{int(i)}" for i in RNG.integers(0, 5, 10)],
+        "nameDest": [f"C{int(i)}" for i in RNG.integers(100, 105, 10)],
+    })
+    resolved = detect_columns(df)
+    assert resolved["nameOrig"].slot == "actor_id"
+    assert resolved["nameDest"].slot == "counterparty"
+
+
+def test_low_cardinality_two_word_column_not_misdetected_as_name():
+    """A repeated categorical two-word column (e.g. currency names like 'UK
+    pounds') matches the same two-alphabetic-word shape as a person name and
+    was previously misclassified as actor_name — found via real-world
+    SAML-D validation, where this risks spurious cross-source name-merges in
+    entity_resolve.py. A real name column varies far more than a handful of
+    repeated category labels."""
+    n = 40
+    currencies = ["UK pounds", "US Dollar", "Euro Zone"]
+    df = pd.DataFrame({
+        "amount": RNG.uniform(1, 500, n).round(2),
+        "payment_currency": [currencies[i % len(currencies)] for i in range(n)],
+    })
+    resolved = detect_columns(df)
+    assert resolved["payment_currency"].slot != "actor_name"
+
+
 def test_obscure_headers_content_probe(tmp_path):
     """Columns with meaningless names still resolve via content probing."""
     df = pd.DataFrame({

@@ -70,9 +70,14 @@ def test_analyze_flow_enables_and_persists(qt_app, synthetic_dir, tmp_path, monk
     assert len(win.home._files) == len(paths)
 
     win.home.analyze_clicked.emit(list(win.home._files))
-    # QThread finishes asynchronously; poll a few frames with processEvents.
+    # QThread finishes asynchronously; poll frames with processEvents. Bound
+    # generously (~30s) rather than tightly: this thread runs the full
+    # pipeline PLUS report generation (md/html/pdf/charts) PLUS chain-of-
+    # custody sealing, which can genuinely take longer than a couple seconds
+    # under load — a bound that's too tight causes flaky failures on a
+    # loaded/slow machine, not a real hang (there's no infinite loop here).
     import time
-    for _ in range(400):
+    for _ in range(1500):
         app = QApplication.instance()
         app.processEvents()
         if getattr(win, "_th", None) is None or not win._th.isRunning():

@@ -1078,6 +1078,12 @@ def fit_chain(df: pd.DataFrame, min_hops: int = 3, hop_days: float = 7.0,
     def dfs(node: str, ts: pd.Timestamp, path: List[str], amts: List[float]):
         extended = False
         for dst, nxt_ts, amt_ in out_edges.get(node, ()):
+            # a real layering ring (A pays B, B pays A back, ...) within the
+            # hop window would otherwise recurse forever and crash the whole
+            # pipeline run with RecursionError; skip any node already on the
+            # current path instead of re-entering it
+            if dst in path:
+                continue
             if abs((nxt_ts - ts).total_seconds()) <= hop.total_seconds():
                 dfs(dst, nxt_ts, path + [dst], amts + [amt_])
                 extended = True
