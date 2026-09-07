@@ -18,6 +18,10 @@ data/report/
 # large fetched datasets (re-downloaded by scripts/real_dataset_validate.py)
 data/internet_samples/processed_dataset.csv
 
+# real Kaggle datasets (manually downloaded; re-derivable via
+# scripts/real_dataset_paysim.py --rebuild / real_dataset_samld.py --rebuild)
+data/real_datasets/
+
 # deprecated files kept locally for reference
 archive/
 
