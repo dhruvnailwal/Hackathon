@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -513,6 +514,26 @@ class HomePage(QWidget):
         fv.addWidget(self.scroll)
         lay.addWidget(self.files_card)
 
+        # ---- legal basis / authorization (logged into every archived run
+        # and printed into the exported report — optional, but "not
+        # recorded" is shown honestly rather than left implicit) ------------
+        legal_row = QHBoxLayout()
+        legal_row.setSpacing(10)
+        legal_label = QLabel("Legal basis / authorization:")
+        legal_label.setObjectName("SectionSub")
+        legal_row.addWidget(legal_label)
+        self.txt_legal_basis = QLineEdit()
+        self.txt_legal_basis.setPlaceholderText(
+            "e.g. warrant #, internal case ref, FIU-IND request — optional")
+        legal_row.addWidget(self.txt_legal_basis, 2)
+        analyst_label = QLabel("Analyst:")
+        analyst_label.setObjectName("SectionSub")
+        legal_row.addWidget(analyst_label)
+        self.txt_analyst = QLineEdit()
+        self.txt_analyst.setPlaceholderText("your name")
+        legal_row.addWidget(self.txt_analyst, 1)
+        lay.addLayout(legal_row)
+
         # ---- actions --------------------------------------------------------
         actions = QHBoxLayout()
         actions.setSpacing(10)
@@ -611,19 +632,27 @@ class HistoryDialog(QDialog):
         self.listw = QListWidget(self)
         self._fill(self.runs)
         lay.addWidget(self.listw, 1)
+        self.verify_status = QLabel("")
+        self.verify_status.setObjectName("SectionSub")
+        self.verify_status.setWordWrap(True)
+        lay.addWidget(self.verify_status)
+
         btns = QHBoxLayout()
         btns.setSpacing(10)
         self.btn_open = QPushButton("Open selected")
+        self.btn_verify = QPushButton("Verify integrity")
         self.btn_delete = QPushButton("Delete")
         self.btn_cancel = QPushButton("Close")
-        for b in (self.btn_delete, self.btn_cancel):
+        for b in (self.btn_verify, self.btn_delete, self.btn_cancel):
             b.setObjectName("GhostBtn")
         self.btn_open.setObjectName("PrimaryBtn")
         self.btn_delete.setObjectName("DangerBtn")
         self.btn_open.clicked.connect(self.accept)
+        self.btn_verify.clicked.connect(self._verify)
         self.btn_delete.clicked.connect(self._delete)
         self.btn_cancel.clicked.connect(self.reject)
         btns.addWidget(self.btn_open)
+        btns.addWidget(self.btn_verify)
         btns.addWidget(self.btn_delete)
         btns.addStretch(1)
         btns.addWidget(self.btn_cancel)
@@ -657,6 +686,25 @@ class HistoryDialog(QDialog):
             storage.delete_run(rid)
             self.runs = storage.list_runs()
             self._fill(self.runs)
+
+    def _verify(self):
+        rid = self.selected_run_id()
+        if not rid:
+            self.verify_status.setText("Select a run first.")
+            return
+        from aml import storage
+        v = storage.verify_run(rid)
+        if v["status"] == "OK":
+            self.verify_status.setText(
+                f"Verified: {len(v['files'])} file(s) match their sealed hashes "
+                f"(sealed {v.get('sealed_at', '?')}).")
+        elif v["status"] in ("NO_MANIFEST", "MANIFEST_UNREADABLE"):
+            self.verify_status.setText(f"Cannot verify: {v['status']}.")
+        else:
+            bad = [f for f, s in v["files"].items() if s != "ok"]
+            self.verify_status.setText(
+                f"TAMPERED — {len(bad)} file(s) do not match their sealed hash: "
+                + ", ".join(bad[:5]) + ("…" if len(bad) > 5 else ""))
 
 
 # ---------------------------------------------------------------------------
@@ -766,6 +814,8 @@ class MainWindow(QWidget):
     # -- actions -------------------------------------------------------------
     def _analyze_files(self, paths):
         self._last_files = list(paths)
+        self._last_legal_basis = self.home.txt_legal_basis.text().strip()
+        self._last_analyst = self.home.txt_analyst.text().strip()
         self.home.btn_analyze.setEnabled(False)
         self.home.btn_analyze.setText("Analyzing…")
         th = PipelineRunner(paths, self)
@@ -787,7 +837,11 @@ class MainWindow(QWidget):
         from aml import storage
         cfg = PipelineConfig.from_yaml(str(ROOT / "config" / "config.yaml"))
         paths = getattr(self, "_last_files", None) or []
-        meta = storage.save_run(result, cfg, paths, label="desktop")
+        meta = storage.save_run(
+            result, cfg, paths, label="desktop",
+            legal_basis=getattr(self, "_last_legal_basis", ""),
+            analyst=getattr(self, "_last_analyst", ""),
+        )
         self._open_run(meta["run_id"])
         self.toast("Analysis complete — your report is ready.")
 

@@ -18,7 +18,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from . import visuals
 from . import insights as insights_mod
@@ -122,11 +122,22 @@ def _md_chart(chart: Path) -> str:
     return f"![{Path(chart).stem}](data:image/png;base64,{b64})"
 
 
-def _markdown(res, cfg, charts: Dict[str, Path]) -> str:
+def _provenance_line(provenance: Optional[dict]) -> str:
+    """One honest line of who authorized this analysis and under what legal
+    basis — 'not recorded' rather than silently omitted, matching the
+    sufficiency engine's own never-hide-an-absence discipline."""
+    prov = provenance or {}
+    legal_basis = prov.get("legal_basis") or "not recorded"
+    analyst = prov.get("analyst") or "not recorded"
+    return f"Legal basis / authorization: {legal_basis} · Analyst: {analyst}"
+
+
+def _markdown(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = None) -> str:
     insight = _insights_for(res, cfg)
     L: List[str] = []
     L.append(f"# {REPORT_TITLE}")
     L.append(f"*{_generated_line(res)}*")
+    L.append(f"*{_provenance_line(provenance)}*")
     L.append("")
     L.append(REPORT_SUBTITLE)
     L.append("")
@@ -243,7 +254,7 @@ def _html_stats(res, insight_list) -> str:
                      for v, lbl in items)
 
 
-def _html(res, cfg, charts: Dict[str, Path]) -> str:
+def _html(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = None) -> str:
     insight_list = _insights_for(res, cfg)
     overview = _overview_lines(res, insight_list)
     overview_html = "<br>".join(_htmlize(line) for line in overview)
@@ -310,7 +321,7 @@ def _html(res, cfg, charts: Dict[str, Path]) -> str:
 </style></head>
 <body><div class="wrap">
   <h1>{REPORT_TITLE}</h1>
-  <div class="meta">{REPORT_SUBTITLE}<br>{_generated_line(res)}</div>
+  <div class="meta">{REPORT_SUBTITLE}<br>{_generated_line(res)}<br>{_htmlize(_provenance_line(provenance))}</div>
   <div class="card">{overview_html}
     <div class="stats">{stat_chips}</div></div>
   <div class="card"><h2>The people who stand out</h2>{insight_cards}</div>
@@ -329,12 +340,16 @@ def _html(res, cfg, charts: Dict[str, Path]) -> str:
 # ---------------------------------------------------------------------------
 # JSON (machine-readable; keeps the technical scores the report omits)
 # ---------------------------------------------------------------------------
-def _json(res, cfg) -> dict:
+def _json(res, cfg, provenance: Optional[dict] = None) -> dict:
     unified = res.unified
     n_entities = int(unified["entity_id"].nunique()) if not unified.empty else 0
     scores = res.model_scores or {}
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "provenance": {
+            "legal_basis": (provenance or {}).get("legal_basis") or "not recorded",
+            "analyst": (provenance or {}).get("analyst") or "not recorded",
+        },
         "summary": {
             "records": int(len(unified)),
             "people": n_entities,
@@ -361,7 +376,7 @@ def _json(res, cfg) -> dict:
 # ---------------------------------------------------------------------------
 # PDF (reportlab)
 # ---------------------------------------------------------------------------
-def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path]) -> Path:
+def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path], provenance: Optional[dict] = None) -> Path:
     """Build a printable PDF led by plain-language findings."""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -394,6 +409,7 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path]) -> Path:
     story = [
         Paragraph(REPORT_TITLE, h1),
         Paragraph(f"{_generated_line(res)} · {REPORT_SUBTITLE}", meta),
+        Paragraph(_pdfize(_provenance_line(provenance)), meta),
         Spacer(1, 4 * mm),
     ]
     for line in _overview_lines(res, insight_list):
@@ -465,8 +481,14 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path]) -> Path:
 # ---------------------------------------------------------------------------
 # entry point
 # ---------------------------------------------------------------------------
-def generate_report(result, config, report_dir: str | Path = "data/report") -> dict:
-    """Build and write the full report. Returns paths of written files."""
+def generate_report(result, config, report_dir: str | Path = "data/report",
+                     provenance: Optional[dict] = None) -> dict:
+    """Build and write the full report. Returns paths of written files.
+
+    ``provenance`` (optional) carries who ran this and under what legal
+    authority (keys: ``legal_basis``, ``analyst``) — surfaced honestly in
+    every exported format rather than only kept in the run's index.json.
+    """
     report_dir = Path(report_dir)
     charts_dir = report_dir / "charts"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -485,10 +507,10 @@ def generate_report(result, config, report_dir: str | Path = "data/report") -> d
         for it in top[:3]
     }
 
-    markdown = _markdown(result, config, charts)
-    html = _html(result, config, charts)
-    json_body = _json(result, config)
-    pdf_path = _pdf(result, config, report_dir, charts)
+    markdown = _markdown(result, config, charts, provenance)
+    html = _html(result, config, charts, provenance)
+    json_body = _json(result, config, provenance)
+    pdf_path = _pdf(result, config, report_dir, charts, provenance)
 
     (report_dir / "report.md").write_text(markdown, encoding="utf-8")
     (report_dir / "report.html").write_text(html, encoding="utf-8")
