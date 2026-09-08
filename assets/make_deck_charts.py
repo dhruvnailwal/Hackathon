@@ -204,10 +204,71 @@ def targets(path):
     plt.close(fig)
 
 
+def real_world_validation(path):
+    """Real (not illustrative) results from scripts/real_dataset_samld.py, run
+    TWICE at different fraud-prevalence levels — because a single
+    "precision@10 = 1.00" number doesn't survive scrutiny on its own. Both
+    validation samples are still enriched well above SAML-D's true 0.104%
+    fraud rate (the volume gate forces this — see the script's module
+    docstring), so neither panel is a real-world deployment precision claim.
+    The point is the middle panel: precision degrades gracefully as
+    prevalence drops, rather than collapsing — evidence of real ranking
+    signal, not a lucky fluke at one enriched setting."""
+    ks = [5, 10, 20, 50, 100, 200, 500, 1000]
+    curated = [1.00, 1.00, 0.95, 0.70, 0.59, 0.565, 0.372, 0.264]   # 21.7% prevalence
+    harder = [1.00, 0.80, 0.50, 0.38, 0.27, 0.225, 0.168, 0.154]    # 8.8% prevalence
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(11.6, 3.3), dpi=200,
+                                          gridspec_kw={"width_ratios": [1.4, 1.4, 1.0]})
+
+    x = np.arange(len(ks))
+    ax1.plot(x, curated, marker="o", color=TEAL, linewidth=2, label="curated (21.7% prevalence)")
+    ax1.plot(x, harder, marker="o", color=AMBER, linewidth=2, label="harder (8.8% prevalence)")
+    ax1.set_xticks(x, [str(k) for k in ks], fontsize=8.5)
+    ax1.set_ylim(0, 1.1)
+    ax1.set_xlabel("top-k ranked entities", fontsize=9)
+    ax1.set_title("precision@k — degrades gracefully,\nnot a lucky fluke", fontsize=10,
+                  color=NAVY, fontweight="bold")
+    ax1.legend(fontsize=7.5, loc="upper right", frameon=False)
+    for s in ["top", "right"]:
+        ax1.spines[s].set_visible(False)
+
+    # zoomed callout on the k=10 comparison
+    labels = ["curated\n21.7% prev.", "harder\n8.8% prev."]
+    vals10 = [curated[1], harder[1]]
+    bars = ax2.bar(labels, vals10, color=[TEAL, AMBER], width=0.55)
+    for b, v in zip(bars, vals10):
+        ax2.text(b.get_x() + b.get_width() / 2, v + 0.02, f"{v:.2f}",
+                 ha="center", fontsize=11, fontweight="bold", color=NAVY)
+    ax2.set_ylim(0, 1.15)
+    ax2.set_title("precision@10, side by side", fontsize=10, color=NAVY, fontweight="bold")
+    for s in ["top", "right"]:
+        ax2.spines[s].set_visible(False)
+
+    # prevalence context: why the numbers differ, and how far both still
+    # are from SAML-D's real, full-dataset base rate
+    prev_labels = ["curated\nsample", "harder\nsample", "SAML-D\ntrue rate"]
+    prev_vals = [21.7, 8.8, 0.104]
+    bars3 = ax3.bar(prev_labels, prev_vals, color=[TEAL, AMBER, GREY], width=0.55)
+    ax3.set_yscale("log")
+    for b, v in zip(bars3, prev_vals):
+        ax3.text(b.get_x() + b.get_width() / 2, v * 1.3, f"{v:g}%",
+                 ha="center", fontsize=9, fontweight="bold", color=NAVY)
+    ax3.set_title("fraud prevalence\n(log scale)", fontsize=10, color=NAVY, fontweight="bold")
+    for s in ["top", "right"]:
+        ax3.spines[s].set_visible(False)
+
+    fig.suptitle("Validated blind against SAML-D — an external dataset never used in development",
+                 fontsize=10.5, color=NAVY, y=1.04)
+    fig.tight_layout()
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
+
+
 aml_scale(os.path.join(OUT, "deck_aml_scale.png"))
 schema_chaos(os.path.join(OUT, "deck_schema_chaos.png"))
 eval_fusion(os.path.join(OUT, "deck_eval_fusion.png"))
 ablation(os.path.join(OUT, "deck_ablation.png"))
 model_zoo(os.path.join(OUT, "deck_model_zoo.png"))
 targets(os.path.join(OUT, "deck_targets.png"))
+real_world_validation(os.path.join(OUT, "deck_real_world_validation.png"))
 print("deck charts done:", [f for f in os.listdir(OUT) if f.startswith("deck_")])

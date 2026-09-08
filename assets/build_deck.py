@@ -43,6 +43,9 @@ def new_deck():
     return prs
 
 
+TOTAL_SLIDES = 5
+
+
 def add_slide(prs, title, kicker, num):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     # header band
@@ -96,7 +99,7 @@ def add_slide(prs, title, kicker, num):
     np_ = ntb.text_frame.paragraphs[0]
     np_.alignment = PP_ALIGN.RIGHT
     nr = np_.add_run()
-    nr.text = f"{num} / 4"
+    nr.text = f"{num} / {TOTAL_SLIDES}"
     nr.font.name = FONT
     nr.font.size = Pt(9)
     nr.font.color.rgb = GREY
@@ -391,12 +394,58 @@ def slide_deliverables(prs):
          9.5, NAVY, first=True)
 
 
+# ===========================================================================
+# SLIDE 5 — REAL-WORLD VALIDATION & TRUST (measured, not proposed)
+# ===========================================================================
+def slide_validation_trust(prs):
+    s = add_slide(prs, "5 · Real-World Validation & Trust",
+                  "Measured against external data, not just our own synthetic generator", 5)
+
+    # left: real-world validation
+    picture(s, "deck_real_world_validation.png", Inches(0.30), Inches(1.28), width=Inches(6.85))
+    card(s, Inches(0.30), Inches(4.55), Inches(6.85), Inches(0.95), accent=TEAL, fill=RGBColor(0xEA, 0xF3, 0xEA))
+    tf = textbox(s, Inches(0.55), Inches(4.63), Inches(6.4), Inches(0.8))
+    para(tf, "Precision degrades gracefully, not collapses, as we make the test harder "
+            "(1.00 → 0.80 @10 as prevalence drops 21.7% → 8.8%) — evidence of real ranking "
+            "signal on SAML-D (Oztas et al., IEEE ICEBE 2023), never seen during development, "
+            "not a lucky number at one enriched setting.",
+         10, NAVY, bold=True, first=True)
+    card(s, Inches(0.30), Inches(5.65), Inches(6.85), Inches(0.95), accent=AMBER, fill=RGBColor(0xFD, 0xEE, 0xDE))
+    tf = textbox(s, Inches(0.55), Inches(5.73), Inches(6.4), Inches(0.8))
+    para(tf, "Bonus: real-data validation surfaced two real bugs — a schema-detection gap "
+            "that silently lost the entity dimension, and a crash-causing infinite recursion "
+            "in the layering detector — both found and fixed.", 10, NAVY, first=True)
+
+    # right: trust & compliance features
+    card(s, Inches(7.35), Inches(1.28), Inches(5.65), Inches(2.55), accent=NAVY)
+    tf = textbox(s, Inches(7.62), Inches(1.40), Inches(5.15), Inches(2.35))
+    para(tf, "Legal-basis provenance", 13, NAVY, bold=True, first=True, space_after=4)
+    para(tf, "Every run records who authorized the analysis and under what legal basis "
+            "(warrant #, case ref, regulatory request) — printed directly into the exported "
+            "report itself, not hidden metadata.", 10.5, DARK_GREY, space_after=8)
+    para(tf, "“Legal basis / authorization: not recorded” shown honestly when left "
+            "blank, instead of a fake default — the same never-hide-an-absence discipline "
+            "as the sufficiency engine.", 9.8, DARK_GREY, italic=True)
+
+    card(s, Inches(7.35), Inches(4.00), Inches(5.65), Inches(2.60), accent=TEAL)
+    tf = textbox(s, Inches(7.62), Inches(4.12), Inches(5.15), Inches(2.40))
+    para(tf, "Chain-of-custody sealing", 13, NAVY, bold=True, first=True, space_after=4)
+    para(tf, "Every archived run is SHA-256 sealed file-by-file and chained to the previous "
+            "run’s seal — an append-only ledger, live in the app.", 10.5, DARK_GREY, space_after=8)
+    chip(s, Inches(7.62), Inches(5.55), Inches(2.55), Inches(0.42), "Verified: 18/18 match", GREEN, size=9.5)
+    chip(s, Inches(10.30), Inches(5.55), Inches(2.55), Inches(0.42), "TAMPERED: report.md", RED, size=9.5)
+    tf = textbox(s, Inches(7.62), Inches(6.05), Inches(5.15), Inches(0.5))
+    para(tf, "Demoed live via the History dialog’s “Verify integrity” button.",
+         9.5, DARK_GREY, italic=True, first=True)
+
+
 def main():
     prs = new_deck()
     slide_problem(prs)
     slide_solution(prs)
     slide_features(prs)
     slide_deliverables(prs)
+    slide_validation_trust(prs)
     out = os.path.join(os.path.dirname(__file__), "AML_Pitch_Deck_v2.pptx")
     prs.save(out)
     print("deck saved:", out)
