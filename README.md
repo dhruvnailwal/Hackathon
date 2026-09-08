@@ -19,6 +19,7 @@
 - [Model Training Process](#model-training-process)
 - [Model Evaluation Metrics](#model-evaluation-metrics)
 - [Model Comparison](#model-comparison)
+- [Real-World Validation](#real-world-validation)
 - [Visualization and Graphs](#visualization-and-graphs)
 - [Prediction System](#prediction-system)
 - [User Interface](#user-interface)
@@ -100,6 +101,9 @@ TraceWeave is designed to address these three failure modes:
 | 10 | **Persistent run storage** | Every analysis is archived (reports + input copies) to the user's app-data directory and survives restarts/uninstalls. |
 | 11 | **Dirty-data robustness suite** | 14 fixture files that stress unknown/ambiguous inputs, verified 14/14 pass. |
 | 12 | **Dataset suite + meta-learner training** | Scripts to generate labelled synthetic datasets (5 correlation modes × 3 seeds) and train/persist a fusion meta-model. |
+| 13 | **Real-world validation** | Blind pipeline runs against SAML-D, an external, independently-labeled AML dataset (Oztas et al., IEEE ICEBE 2023) never used in development — see [Real-World Validation](#real-world-validation). |
+| 14 | **Legal-basis provenance** | Every analysis run records who authorized it and under what legal basis, printed directly into the exported report rather than kept as hidden metadata. |
+| 15 | **Chain-of-custody sealing** | Every archived run is SHA-256 sealed file-by-file and chained to the previous run's seal; a live "Verify integrity" check detects tampering. |
 
 ---
 
@@ -443,6 +447,36 @@ This shows how much of the population each model's signal covers — the stat/ML
 
 ---
 
+## Real-World Validation
+
+Every number above is graded on the project's own synthetic generator. To get a number that isn't self-graded, the pipeline was also run **blind** against real, external, independently-labeled data it never saw during development.
+
+### SAML-D
+
+[SAML-D](https://www.kaggle.com/datasets/berkanoztas/synthetic-transaction-monitoring-dataset-aml) (Oztas et al., *"Enhancing Anti-Money Laundering: Development of a Synthetic Transaction Monitoring Dataset,"* IEEE ICEBE 2023 — the same paper `PLAN.md` already cited as design precedent, before this validation ever ran) is a real, peer-reviewed AML transaction dataset: 9,504,852 transactions, 9,873 labeled suspicious (**0.104%** true fraud rate), spanning 28 typologies (Structuring, Smurfing, Layered_Fan_In/Out, Behavioural_Change, Bipartite, Cash_Withdrawal, Deposit-Send, and more). License: CC BY-NC-SA 4.0 (non-commercial).
+
+Reproduced via `scripts/real_dataset_samld.py` (download the CSV yourself — Kaggle gates it behind login — see the script's docstring). Because the sufficiency engine's volume gate is a **population average**, not per-entity (see `sufficiency.py::_overall_volume_note`), any sample that scores at all must concentrate known-fraud accounts well above SAML-D's true base rate. Rather than report one such number, the script runs **two** validation passes on purpose:
+
+| | Curated (`--rebuild`) | Harder (`--harder --rebuild`) |
+|---|---|---|
+| Scored entities | 4,625 | 7,929 |
+| Ground-truth positives resolved | 1,005 | 698 |
+| Fraud prevalence in sample | 21.7% | 8.8% |
+| precision@10 | 1.000 | 0.800 |
+| precision@100 | 0.590 | 0.270 |
+| recall@10 | 0.010 | 0.011 |
+| recall@1000 | 0.263 | 0.221 |
+
+**Read this honestly**: precision is extremely sensitive to base rate, and both samples are still far more fraud-concentrated than SAML-D's real 0.104% rate (getting all the way to that rate isn't reachable without a fundamentally larger sample than this pipeline's entity-resolution step can process quickly). The finding that matters is that precision@10 **degrades gracefully** (1.00 → 0.80) as the test gets harder, rather than collapsing — evidence of real ranking signal, not a lucky number at one enriched setting. The more portable metric is **lift over random ranking**: 4.6x at k=10 in the curated pass, tapering to 1.2x by k=1000.
+
+Validating against real data also surfaced and fixed two real bugs invisible to the synthetic test suite: a schema-detection gap where sender/originator-style headers (e.g. `nameOrig`) never resolved to `actor_id`, silently losing the entity dimension; and a `RecursionError` crash in the chain/layering detector caused by a transaction cycle (two accounts paying each other back within the hop window) that had no cycle guard.
+
+### PaySim (structural mismatch, not a pipeline bug)
+
+[PaySim](https://www.kaggle.com/datasets/ealaxi/paysim1) (6,362,620 transactions, 8,213 fraud rows, CC BY-SA 4.0) was also tried, via `scripts/real_dataset_paysim.py`. It turned out to be structurally incompatible with the pipeline's entity-centric design: nearly every sender account appears **exactly once** (mean ~1.0–1.5 transactions/account) — a one-shot-per-transaction fraud-classification dataset, not an accumulating-history-per-account one the way SAML-D and this project's own synthetic generator are. No amount of resampling fixes this; `min_events_per_entity` can never be cleared. The attempt was still valuable — it is what surfaced the `nameOrig`/`actor_id` schema-detection bug fixed above.
+
+---
+
 ## Visualization and Graphs
 
 All report charts are generated by `src/aml/visuals.py` and embedded into Markdown/HTML/PDF. They are described in detail in [Exploratory Data Analysis](#exploratory-data-analysis). Additional model/experiment charts are produced by the research scripts under `scripts/`.
@@ -479,19 +513,36 @@ The project ships a **PySide6 desktop application** (`main_app.py`) named **Trac
 
 | Screen | Contents |
 |---|---|
-| **Home** | A drag-and-drop zone, a browse button, a list of loaded files (each removable, with a "Clear all" button), an **Analyze** button, and a **History** button. Status text guides the user. |
+| **Home** | A drag-and-drop zone, a browse button, a list of loaded files (each removable, with a "Clear all" button), **Legal basis / authorization** and **Analyst** text fields, an **Analyze** button, and a **History** button. Status text guides the user. |
 | **Report** | A `QWebEngineView` preview of the colourful HTML report filling the window, plus buttons: **Download MD**, **Download PDF**, **History**, and **← Home**. |
-| **History** | A dialog listing archived runs (records · people · sources · top insight) with **Open selected** and **Delete**. |
+| **History** | A dialog listing archived runs (records · people · sources · top insight) with **Open selected**, **Verify integrity**, and **Delete**. |
 
 ### Interaction flow
 
 1. User drags-and-drops supported files into the drop zone (unsupported extensions are skipped with a toast notification).
 2. Files appear as removable rows; the Analyze button enables once a file is present.
-3. Clicking **Analyze** runs the pipeline on a background thread (`QThread`) so the UI stays responsive; the button shows "Analyzing…".
-4. On completion, the report screen opens in the webview, the run is **automatically archived**, and a non-blocking toast confirms completion.
-5. The user can download the report as Markdown or PDF, and revisit past analyses via **History**.
+3. User optionally fills in **legal basis / authorization** (warrant #, case ref, regulatory request) and **analyst** name — left blank, the report honestly shows "not recorded" rather than a fake default.
+4. Clicking **Analyze** runs the pipeline on a background thread (`QThread`) so the UI stays responsive; the button shows "Analyzing…".
+5. On completion, the report screen opens in the webview, the run is **automatically archived and SHA-256 sealed** (see [Chain-of-Custody Sealing](#chain-of-custody-sealing) below), and a non-blocking toast confirms completion.
+6. The user can download the report as Markdown or PDF, and revisit past analyses via **History**, where **Verify integrity** recomputes hashes and reports `OK` or exactly which file was `TAMPERED`.
 
 The UI uses a "frosted-glass" green-and-white theme with explicit hover/pressed states on every button.
+
+### Legal-basis provenance
+
+Every analysis run records who authorized it and under what legal basis. This is not just metadata — it is printed directly into the exported report itself (Markdown/HTML/PDF/JSON), so the artifact carries its own record of authorization. If left blank, the report prints **"Legal basis / authorization: not recorded"** honestly, rather than implying consent that was never captured — the same never-hide-an-absence discipline as the sufficiency engine.
+
+This is designed to answer, directly, the question a law-enforcement partner will ask first: *"under what authority was this data analyzed?"* TraceWeave does not collect data — it is an analyst-side triage layer over data already lawfully obtained (a production order, a court order, a compliance channel), and every report states that basis explicitly. (This framing has not been verified against specific statutory citations — treat it as a design principle, not legal advice.)
+
+### Chain-of-custody sealing
+
+Every archived run is hashed file-by-file with SHA-256 (every report file, chart, and copied source file) and the resulting hash set is **chained to the previous run's seal** — an append-only ledger, the same tamper-evidence idea a blockchain uses, without needing one.
+
+- `storage.verify_run(run_id)` recomputes hashes and reports `OK`, or exactly which file(s) are `TAMPERED`.
+- `storage.verify_chain()` walks every archived run in order and confirms each one's seal correctly chains to the previous one's — catching tampering with a past run's *recorded* hashes, not just its files.
+- Live in the GUI: History → select a run → **Verify integrity**.
+
+This is a **local, tamper-evident** check, not a cryptographically signed, tamper-proof one — it proves a report hasn't been altered since sealing and that history hasn't been quietly rewritten, but nothing here is signed with a key the analyst doesn't also control, so it does not prove authorship to a third party.
 
 ---
 
@@ -526,8 +577,8 @@ Hackathon/
 │   ├── fusion_meta.py        # Learned RandomForest/XGBoost fusion meta-learner
 │   ├── insights.py           # Plain-language evidence extractors
 │   ├── visuals.py            # matplotlib report charts
-│   ├── report.py             # Markdown/HTML/PDF/JSON report generation
-│   ├── storage.py            # Persistent run archive in user data dir
+│   ├── report.py             # Markdown/HTML/PDF/JSON report generation + legal-basis provenance
+│   ├── storage.py            # Persistent run archive + SHA-256 chain-of-custody sealing
 │   ├── assets/
 │   │   └── fusion_meta.joblib  # Persisted trained meta-model
 │   └── data_generator/
@@ -547,10 +598,12 @@ Hackathon/
 │   ├── fetch_samples.py          # Fetch internet sample data
 │   ├── probe_dirty.py / stage_a_bench.py / stage_a_stress.py
 │   ├── train_fusion_meta.py      # Train/persist the meta-learner
+│   ├── real_dataset_paysim.py    # Real-world validation: PaySim (structural mismatch)
+│   ├── real_dataset_samld.py     # Real-world validation: SAML-D (--harder for lower prevalence)
 │   ├── tune.py
 │   └── run_all.py
 │
-├── tests/                   # pytest suite (12 files; GAP_AUDIT: 92 pass / 2 skip)
+├── tests/                   # pytest suite (12 files; 96 pass, 0 skip)
 │   ├── conftest.py           # Synthetic-dataset fixture
 │   └── test_*.py
 │
@@ -560,11 +613,13 @@ Hackathon/
 │   ├── answer_key_surprise.json  # Surprise/anonymised write-only key
 │   ├── dirty_samples/        # 14 dirty-data fixtures
 │   ├── internet_samples/     # Fetched real-world samples (processed .csv gitignored)
+│   ├── real_datasets/        # Downloaded PaySim/SAML-D CSVs (gitignored, ~1.9GB; see scripts/real_dataset_*.py)
 │   └── datasets/             # 5-mode × 3-seed dataset suite + suite.md
 │
 ├── results/                  # Persisted eval snapshots (gitignored)
 │   ├── current_baseline/eval.json · eval.md
-│   └── after_fixes/eval.json · eval.md
+│   ├── after_fixes/eval.json · eval.md
+│   └── real_datasets/        # samld_verdict.json · samld_verdict_harder.json · paysim_verdict.json
 │
 └── assets/                   # Pitch deck + chart-generation scripts
     ├── AML_Pitch_Deck*.pptx
@@ -578,6 +633,7 @@ Hackathon/
 - **`run_pipeline.py`** — the primary CLI: loads configured inputs, runs the pipeline, prints source detection + sufficiency verdicts + top-10, and writes the full report.
 - **`run_demo.py`** — regenerates the synthetic dataset and runs the pipeline end-to-end for a demo.
 - **`eval.py`** — reproduces the evaluation metrics and ablation against the answer keys with `--out results/<name>`.
+- **`scripts/real_dataset_samld.py`** — real-world validation against SAML-D; `--harder` runs the lower-prevalence, more realistic pass. See [Real-World Validation](#real-world-validation).
 - **`SCHEMA.md`** — the frozen canonical dataframe spec that every stage builds against.
 - **`PLAN.md`** — the research foundation and design decisions.
 - **`GAP_AUDIT.md`** — the spec-vs-implementation audit and verified results.
@@ -618,7 +674,7 @@ pip install -r requirements.txt
 pytest
 ```
 
-(Reported as 92 passing / 2 skipped in `GAP_AUDIT.md`.)
+(96 passing, 0 skipped as of the latest run; `GAP_AUDIT.md` reports the earlier 92/2 baseline.)
 
 ---
 
@@ -671,6 +727,16 @@ python scripts/dirty_audit.py
 python scripts/train_fusion_meta.py
 ```
 
+### Real-world validation (SAML-D / PaySim)
+
+Requires downloading the dataset CSV yourself first (Kaggle gates both behind login — see each script's docstring for the exact URL and where to place the file).
+
+```bash
+python scripts/real_dataset_samld.py              # curated pass (21.7% prevalence)
+python scripts/real_dataset_samld.py --harder --rebuild   # harder pass (8.8% prevalence)
+python scripts/real_dataset_paysim.py             # PaySim (structural mismatch — see Real-World Validation)
+```
+
 ---
 
 ## How to Use
@@ -710,6 +776,8 @@ In `results/current_baseline/eval.md`, the top-ranked entity is **E0192 with sco
 
 ## Results
 
+> These are the synthetic-data baseline numbers. For numbers graded on real, external, independently-labeled data, see [Real-World Validation](#real-world-validation).
+
 The most up-to-date baseline in the repo is `results/current_baseline/eval.json` (a run on the synthetic sample set). From it:
 
 | Metric | Value |
@@ -740,7 +808,9 @@ These are the actual persisted numbers, not idealised figures — the project tr
 
 ## Limitations
 
-- **Synthetic data only.** The primary source set is generated; there is no large real-world labelled dataset, so real-world transferability is not proven (an `internet_samples` fetch pipeline exists, but the processed file is gitignored/redownloaded).
+- **Primary development is synthetic; real-world validation is a supplementary check, not the main evaluation.** The pipeline has been run blind against SAML-D, a real external AML dataset (see [Real-World Validation](#real-world-validation)), but both validation samples are still far more fraud-concentrated than SAML-D's true 0.104% rate — the reported precision numbers are not real-world deployment claims.
+- **Chain-of-custody sealing is tamper-evident, not tamper-proof** — no cryptographic signing with a key the analyst doesn't also control, so it does not prove authorship to a third party.
+- **Legal-basis framing has not been verified against specific statutory citations** — treat it as a design principle, not legal advice.
 - **Recall@10 is modest on the default baseline.** Several rare anomaly typologies (`chain`, `dormant_flip`, `colocation`) are not recovered in the top-10 in the current `results/current_baseline` snapshot.
 - **Entity resolution is per-source with raw-ID equality for cross-source linking** — there is no phonetic/canonicalisation step (documented in `GAP_AUDIT.md`).
 - **Cross-source identity linking** relies on shared identifier equality plus fuzzy *names*; name collisions across sources are avoided but the linkage is not perfect.
@@ -754,11 +824,11 @@ These are the actual persisted numbers, not idealised figures — the project tr
 
 ## Future Improvements
 
-**Already implemented (current functionality):** the full Stage A–G pipeline, the model zoo, sufficiency engine, fusion (Borda/weighted/meta), evaluation harness, report generation, desktop GUI, and dataset/robustness tooling.
+**Already implemented (current functionality):** the full Stage A–G pipeline, the model zoo, sufficiency engine, fusion (Borda/weighted/meta), evaluation harness, report generation, desktop GUI, dataset/robustness tooling, real-world validation against SAML-D/PaySim, legal-basis provenance, and chain-of-custody sealing.
 
 **Potential future improvements (not yet implemented):**
 
-- **Real-world dataset validation** — validate and cite real financial datasets to strengthen generalisation claims.
+- **Real-world validation at realistic prevalence** — SAML-D validation currently runs at 21.7%/8.8% fraud concentration, both well above SAML-D's true 0.104% rate; closing that gap needs a sample (and entity-resolution runtime) an order of magnitude larger.
 - **Better entity resolution** — add phonetic/canonicalisation and stronger cross-source linking.
 - **Hyperparameter tuning** — a systematic tuning pass over contamination, tolerances, and fusion weights.
 - **Improved fusion** — integrate the learned meta-learner as the default after broader validation.
