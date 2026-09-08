@@ -21,7 +21,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from . import visuals
 from . import insights as insights_mod
@@ -175,6 +175,50 @@ def _md_chart(chart: Path) -> str:
     return f"![{Path(chart).stem}](data:image/png;base64,{b64})"
 
 
+# how many rows a *report* prints per evidence sentence — comfortably
+# covers realistic per-entity counts (this is a display limit, not a data
+# limit: report.json always carries the full list insights.py collected).
+_TRAIL_DISPLAY_CAP = 30
+
+
+def _trail_value(row: dict) -> str:
+    """Amount for a bank row, duration for a call row, '—' otherwise —
+    a trail row only ever has one of the two populated."""
+    return row.get("amount") or row.get("duration") or "—"
+
+
+def _trail_label(shown: List[dict], total: Optional[int]) -> str:
+    n = len(shown)
+    if total and total > n:
+        return f"{n} of {total} records"
+    return f"{n} record{'s' if n != 1 else ''}"
+
+
+def _display_trail(ev: dict, cap: int = _TRAIL_DISPLAY_CAP) -> Tuple[List[dict], str]:
+    """The (possibly truncated) rows a report should print for one evidence
+    item, plus its "N of M" label — report.json gets the untruncated list
+    straight from ev['trail'] instead."""
+    trail = ev.get("trail") or []
+    shown = trail[:cap]
+    return shown, _trail_label(shown, ev.get("trail_total"))
+
+
+def _md_evidence_trail(shown: List[dict], label: str) -> List[str]:
+    """Collapsible line-item record table backing one evidence sentence —
+    the actual calls/transfers/posts behind that specific claim, not just
+    a summary number."""
+    if not shown:
+        return []
+    lines = [f"<details><summary>Evidence trail ({label})</summary>", ""]
+    lines.append("| When | Source | Type | Counterparty | Amount / Duration |")
+    lines.append("|---|---|---|---|---|")
+    for row in shown:
+        lines.append(f"| {row['timestamp']} | {row['source']} | {row['event_type']} | "
+                     f"{row['counterparty']} | {_trail_value(row)} |")
+    lines += ["", "</details>", ""]
+    return lines
+
+
 def _provenance_line(provenance: Optional[dict]) -> str:
     """One honest line of who authorized this analysis and under what legal
     basis — 'not recorded' rather than silently omitted, matching the
@@ -215,9 +259,10 @@ def _markdown(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = No
         for it in insight:
             L.append(f"### {it['rank']}. {it['name']} — {it['risk']}")
             L.append("")
-            for j, bullet in enumerate(it["evidence"]):
-                prefix = "-" if j == 0 else "  -"
-                L.append(f"{prefix} {_unbold(bullet)}")
+            for ev in it["evidence_items"]:
+                L.append(f"- {_unbold(ev['sentence'])}")
+                shown, label = _display_trail(ev)
+                L.extend(_md_evidence_trail(shown, label))
             L.append("")
     else:
         L.append("None.")
@@ -285,18 +330,37 @@ def _risk_chip(risk: str) -> str:
             f'border-radius:9px;font-weight:800;font-size:11px">{risk}</span>')
 
 
+def _html_evidence_trail(shown: List[dict], label: str) -> str:
+    if not shown:
+        return ""
+    rows = "\n".join(
+        f'<tr><td>{_htmlize(r["timestamp"])}</td><td>{_htmlize(r["source"])}</td>'
+        f'<td>{_htmlize(r["event_type"])}</td><td>{_htmlize(r["counterparty"])}</td>'
+        f'<td>{_htmlize(_trail_value(r))}</td></tr>'
+        for r in shown
+    )
+    return (f'<details class="trail"><summary>Evidence trail ({label})</summary>'
+            f'<table><thead><tr><th>when</th><th>source</th><th>type</th>'
+            f'<th>counterparty</th><th>amount / duration</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></details>')
+
+
 def _html_insight_cards(insight_list) -> str:
     if not insight_list:
         return ('<p style="color:#6b857d">Nobody stood out from the crowd '
                 'this run.</p>')
     cards = []
     for it in insight_list:
-        bullets = "\n".join(f"<li>{_htmlize(b)}</li>" for b in it["evidence"])
+        items_html = "\n".join(
+            f'<li>{_htmlize(ev["sentence"])}'
+            f'{_html_evidence_trail(*_display_trail(ev))}</li>'
+            for ev in it["evidence_items"]
+        )
         cards.append(
             f'<div class="card person">'
             f'<div class="head"><span class="rank">{it["rank"]}</span>'
             f'<h3>{it["name"]}</h3>{_risk_chip(it["risk"])}</div>'
-            f'<ul>{bullets}</ul></div>'
+            f'<ul>{items_html}</ul></div>'
         )
     return "\n".join(cards)
 
@@ -388,6 +452,9 @@ def _html(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = None) 
   code {{ background: rgba(63,191,143,0.12); padding: 1px 6px; border-radius: 6px; }}
   ul {{ margin: 12px 0 0; padding-left: 20px; }}
   li {{ margin-top: 5px; }}
+  .trail {{ margin-top: 12px; }}
+  .trail summary {{ cursor: pointer; font-weight: 700; color: {TEAL}; font-size: 12px; }}
+  .trail table {{ margin-top: 8px; font-size: 12px; }}
   .footnote {{ color: {MUTED}; font-size: 12px; margin-top: 12px; }}
 </style></head>
 <body><div class="wrap">
@@ -418,6 +485,7 @@ def _json(res, cfg, provenance: Optional[dict] = None) -> dict:
     unified = res.unified
     n_entities = int(unified["entity_id"].nunique()) if not unified.empty else 0
     scores = res.model_scores or {}
+    insight_list = _insights_for(res, cfg)
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "provenance": {
@@ -445,6 +513,7 @@ def _json(res, cfg, provenance: Optional[dict] = None) -> dict:
         "model_scores": {m: dict(sorted(s.items(), key=lambda kv: -kv[1])[:20])
                          for m, s in scores.items()},
         "rankings": res.rankings,
+        "insights": insight_list,
     }
 
 
@@ -527,15 +596,42 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path], provenance: Option
                   Image(str(charts["people"]), width=170 * mm, height=64 * mm)]
     story.append(Spacer(1, 3 * mm))
 
+    trail_body = ParagraphStyle("TrailBody", parent=styles["BodyText"], fontSize=7,
+                                textColor=colors.HexColor(NAVY), leading=8.5)
+    trail_caption = ParagraphStyle("TrailCaption", parent=styles["BodyText"], fontSize=7.5,
+                                   textColor=colors.HexColor(TEAL), spaceBefore=2, spaceAfter=1,
+                                   fontName="Helvetica-Bold")
     if insight_list:
         story.append(Paragraph("The people who stand out", h2))
         for it in insight_list:
             rc = risk_colors.get(it["risk"], colors.HexColor(MUTED))
             story.append(Paragraph(f"{it['rank']}. <b>{it['name']}</b> — "
                                    f"<font color='#{rc.hexval()[2:]}'>{it['risk']}</font>", h3))
-            for bl in it["evidence"]:
-                story.append(Paragraph(f"• {_pdfize(bl)}", body))
-        story.append(Spacer(1, 3 * mm))
+            for ev in it["evidence_items"]:
+                story.append(Paragraph(f"• {_pdfize(ev['sentence'])}", body))
+                shown, label = _display_trail(ev)
+                if shown:
+                    story.append(Paragraph(f"Evidence trail ({label})", trail_caption))
+                    t_data = [["When", "Source", "Type", "Counterparty", "Amount / Duration"]] + [
+                        [Paragraph(_pdfize(r["timestamp"]), trail_body),
+                         Paragraph(_pdfize(r["source"]), trail_body),
+                         Paragraph(_pdfize(r["event_type"]), trail_body),
+                         Paragraph(_pdfize(r["counterparty"]), trail_body),
+                         Paragraph(_pdfize(_trail_value(r)), trail_body)]
+                        for r in shown
+                    ]
+                    tt = Table(t_data, colWidths=[24 * mm, 15 * mm, 18 * mm, 55 * mm, 26 * mm])
+                    tt.setStyle(TableStyle([
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(LIGHT)),
+                        ("FONTSIZE", (0, 0), (-1, -1), 7),
+                        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cfdcd6")),
+                        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                        ("TOPPADDING", (0, 0), (-1, -1), 2),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ]))
+                    story += [Spacer(1, 0.8 * mm), tt, Spacer(1, 1.5 * mm)]
+            story.append(Spacer(1, 1.5 * mm))
+        story.append(Spacer(1, 2 * mm))
 
     story.append(Paragraph("Where the records came from", h2))
     story.append(Table(
