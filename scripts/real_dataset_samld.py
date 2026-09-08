@@ -16,20 +16,44 @@ dataset where our entity-centric design structurally can't clear
 and 6,537 of the 7,902 fraud-implicated accounts already have >=30 total
 appearances — a real structural fit for this pipeline's design.
 
-Sampling (``_build_sample``): rather than a flat row cap, this stratifies by
-typology first so rare typologies (Smurfing: 932 rows total dataset-wide)
-aren't drowned out by common ones, then per chosen account caps total rows
-at ``PER_ACCOUNT_CAP`` (always keeping every one of that account's actual
-fraud-labeled rows, subsampling only its normal-transaction rows) so a
-handful of 1000+-txn hub accounts can't eat the whole row budget alone.
+Two variants, because a single-number "precision@10 = 1.00" headline does
+not survive scrutiny on its own (see the conversation that led here): the
+volume-gate constraint (min_events_per_entity is a POPULATION AVERAGE, not
+per-entity — see sufficiency.py's _overall_volume_note) forces any sample
+that scores at all to concentrate known-fraud accounts far above SAML-D's
+real base rate (9,873 / 9.5M = 0.104%), so the headline number is real but
+base-rate-inflated, not a real-world precision claim.
+
+  --curated (default): the original, smaller sample (~150k rows, ~40
+    accounts/typology, ~21.7% fraud prevalence among scored entities) —
+    a clean signal check, but heavily enriched.
+  --harder: a much larger background pool (~10k additional naturally
+    active accounts, no artificial padding — they already clear the
+    volume gate on their own transaction history) dilutes prevalence to
+    ~6-7%, roughly 3x closer to reality. Still nowhere near SAML-D's true
+    0.1%, which is not reachable at all without a fundamentally larger
+    sample (see the module docstring math in the commit that added this),
+    but this is the harder, more honest number to lead with, and it shows
+    precision degrading gracefully (1.00 -> ~0.90 @10) rather than
+    collapsing — a materially more credible story than the curated run
+    alone.
+
+Sampling (``_build_sample``): stratifies by typology first so rare
+typologies (Smurfing: 932 rows total dataset-wide) aren't drowned out by
+common ones, then per chosen account caps total rows at ``PER_ACCOUNT_CAP``
+(always keeping every one of that account's actual fraud-labeled rows,
+subsampling only its normal-transaction rows) so a handful of 1000+-txn hub
+accounts can't eat the whole row budget alone.
 
 ``Is_laundering``/``Laundering_type`` are stripped from the file handed to
-the pipeline (no leakage) and kept only in a write-only ``ground_truth.json``,
+the pipeline (no leakage) and kept only in a write-only ``ground_truth*.json``,
 same discipline as ``data/answer_key_surprise.json``.
 
 Usage:
-    python scripts/real_dataset_samld.py             # uses cached sample if present
-    python scripts/real_dataset_samld.py --rebuild    # rebuild sample from SAML-D.csv
+    python scripts/real_dataset_samld.py                    # curated, cached if present
+    python scripts/real_dataset_samld.py --rebuild           # rebuild curated sample
+    python scripts/real_dataset_samld.py --harder             # harder, lower-prevalence variant
+    python scripts/real_dataset_samld.py --harder --rebuild   # rebuild the harder sample
 """
 from __future__ import annotations
 
@@ -53,17 +77,32 @@ from eval import recall_precision  # noqa: E402
 
 DATA_DIR = ROOT / "data" / "real_datasets" / "samld"
 FULL_CSV = DATA_DIR / "SAML-D.csv"
-SAMPLE_CSV = DATA_DIR / "samld_sample.csv"
-TRUTH_JSON = DATA_DIR / "ground_truth.json"
 OUT = ROOT / "results" / "real_datasets"
-
-ACCOUNTS_PER_TYPE = 40      # max accounts sampled per suspicious typology
-PER_ACCOUNT_CAP = 60        # max total rows kept per chosen account (>= min_events_per_entity)
-TARGET_TOTAL_ROWS = 150_000
 SEED = 42
 
+VARIANTS = {
+    "curated": dict(
+        accounts_per_type=40,
+        per_account_cap=60,
+        target_total_rows=150_000,
+        background_pool=None,   # unbounded: fill purely by row budget
+        sample_csv=DATA_DIR / "samld_sample.csv",
+        truth_json=DATA_DIR / "ground_truth.json",
+        verdict_json=OUT / "samld_verdict.json",
+    ),
+    "harder": dict(
+        accounts_per_type=10,
+        per_account_cap=60,
+        target_total_rows=450_000,
+        background_pool=10_000,  # cap distinct background accounts pulled in
+        sample_csv=DATA_DIR / "samld_sample_harder.csv",
+        truth_json=DATA_DIR / "ground_truth_harder.json",
+        verdict_json=OUT / "samld_verdict_harder.json",
+    ),
+}
 
-def _build_sample() -> None:
+
+def _build_sample(variant: dict) -> None:
     if not FULL_CSV.exists():
         raise SystemExit(
             f"Missing {FULL_CSV}. Download the SAML-D CSV from "
@@ -85,7 +124,7 @@ def _build_sample() -> None:
     sender_counts = df["Sender_account"].value_counts()
     fraud = df[df["Is_laundering"] == 1]
 
-    # pick up to ACCOUNTS_PER_TYPE accounts per suspicious typology, preferring
+    # pick up to accounts_per_type accounts per suspicious typology, preferring
     # ones that already clear the volume gate as SENDERS, so rare typologies
     # aren't crowded out by common ones (Structuring/Smurfing have far fewer
     # rows than e.g. Layered_Fan_In)
@@ -93,7 +132,7 @@ def _build_sample() -> None:
     for ltype, grp in fraud.groupby("Laundering_type"):
         accts = pd.unique(grp["Sender_account"])
         counts = sender_counts.reindex(accts).fillna(0).sort_values(ascending=False)
-        for acct in counts.index[:ACCOUNTS_PER_TYPE]:
+        for acct in counts.index[:variant["accounts_per_type"]]:
             chosen_accounts.setdefault(acct, ltype)
 
     print(f"  chosen accounts across {fraud['Laundering_type'].nunique()} typologies: {len(chosen_accounts)}")
@@ -105,7 +144,7 @@ def _build_sample() -> None:
         sent_rows = df[df["Sender_account"] == acct]
         must_keep = sent_rows[sent_rows["Is_laundering"] == 1]
         rest_rows = sent_rows[sent_rows["Is_laundering"] == 0]
-        pad_n = max(0, PER_ACCOUNT_CAP - len(must_keep))
+        pad_n = max(0, variant["per_account_cap"] - len(must_keep))
         pad_rows = rest_rows.sample(n=min(pad_n, len(rest_rows)), random_state=SEED)
         # a handful of rows where they're the RECEIVER too, for realistic
         # counterparty-side context (doesn't count toward their own volume,
@@ -130,17 +169,25 @@ def _build_sample() -> None:
     # standard practice in real AML triage, not a metrics trick), and lets
     # this validation actually measure ranking quality instead of always
     # hitting the same global BLOCKED wall PaySim did.
+    #
+    # The --harder variant draws from a much larger slice of this same pool
+    # (up to background_pool distinct accounts, each capped the same way) to
+    # dilute fraud prevalence — accounts are never invented or padded beyond
+    # their own real transaction history, only more of the naturally
+    # qualifying ones are included.
     active_pool = sender_counts[sender_counts >= 30].index
     active_pool = [a for a in active_pool if a not in chosen_accounts]
     rng.shuffle(active_pool := list(active_pool))
+    if variant["background_pool"] is not None:
+        active_pool = active_pool[: variant["background_pool"]]
 
     pad_parts = []
     running = len(core)
     for acct in active_pool:
-        if running >= TARGET_TOTAL_ROWS:
+        if running >= variant["target_total_rows"]:
             break
         sent_rows = df[df["Sender_account"] == acct]
-        capped = sent_rows.sample(n=min(PER_ACCOUNT_CAP, len(sent_rows)), random_state=SEED)
+        capped = sent_rows.sample(n=min(variant["per_account_cap"], len(sent_rows)), random_state=SEED)
         pad_parts.append(capped)
         running += len(capped)
     pad = pd.concat(pad_parts) if pad_parts else df.iloc[:0]
@@ -168,31 +215,35 @@ def _build_sample() -> None:
         "n_accounts_ge30": n_ge30,
         "fraud_actor_types": {k: sorted(v) for k, v in acct_type.items()},
     }
-    TRUTH_JSON.write_text(json.dumps(truth, indent=2))
+    variant["truth_json"].write_text(json.dumps(truth, indent=2))
     print(f"  ground-truth fraud accounts: {len(truth['fraud_actor_types']):,}")
 
     pipeline_cols = ["txn_timestamp", "Sender_account", "Receiver_account", "Amount",
                       "Payment_currency", "Received_currency", "Sender_bank_location",
                       "Receiver_bank_location", "Payment_type"]
-    sample[pipeline_cols].to_csv(SAMPLE_CSV, index=False)
-    print(f"  wrote {SAMPLE_CSV}")
+    sample[pipeline_cols].to_csv(variant["sample_csv"], index=False)
+    print(f"  wrote {variant['sample_csv']}")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rebuild", action="store_true", help="rebuild the sample from SAML-D.csv")
+    ap.add_argument("--harder", action="store_true",
+                     help="use the larger, lower-prevalence (harder, more realistic) sample")
     args = ap.parse_args()
+    variant = VARIANTS["harder" if args.harder else "curated"]
+    sample_csv, truth_json, verdict_json = variant["sample_csv"], variant["truth_json"], variant["verdict_json"]
 
-    if args.rebuild or not SAMPLE_CSV.exists() or not TRUTH_JSON.exists():
-        _build_sample()
+    if args.rebuild or not sample_csv.exists() or not truth_json.exists():
+        _build_sample(variant)
     else:
-        print(f"Using cached sample: {SAMPLE_CSV}")
+        print(f"Using cached sample: {sample_csv}")
 
-    truth = json.loads(TRUTH_JSON.read_text())
+    truth = json.loads(truth_json.read_text())
     fraud_actor_types = truth["fraud_actor_types"]
 
     print("\n== Schema auto-detection (blind — no manual column mapping) ==")
-    ls = load_any(SAMPLE_CSV)
+    ls = load_any(sample_csv)
     det = detect_dataframe(ls.df, file=ls.file)
     resolved = {k: v.slot for k, v in det.columns.items() if v.slot}
     unresolved = [k for k, v in det.columns.items() if not v.slot]
@@ -207,7 +258,7 @@ def main() -> int:
     pipe = Pipeline(min_events_per_entity=cfg.min_events_per_entity,
                     tol_minutes=cfg.tol_minutes,
                     structuring_threshold=cfg.structuring_threshold)
-    res = pipe.run([str(SAMPLE_CSV)], with_models=cfg.with_models)
+    res = pipe.run([str(sample_csv)], with_models=cfg.with_models)
 
     print("Model verdicts:")
     for v in res.sufficiency.values():
@@ -222,14 +273,15 @@ def main() -> int:
         if eid:
             truth_type[eid] = types[0]  # eval.py's recall_precision wants one type per entity
     truth_entities = set(truth_type.keys())
+    n_total = len(res.rankings)
     print(f"\nGround-truth fraud accounts: {len(fraud_actor_types):,}; "
-          f"of those, {len(truth_entities):,} resolved to a scored entity_id.")
+          f"of those, {len(truth_entities):,} resolved to a scored entity_id "
+          f"(prevalence: {len(truth_entities)/max(n_total,1):.2%} of {n_total:,} scored).")
 
     metrics = {}
     if res.rankings and truth_entities:
         ks = (5, 10, 20, 50, 100, 200, 500, 1000)
         metrics = recall_precision(res.rankings, truth_entities, truth_type, ks=ks)
-        n_total = len(res.rankings)
         n_pos = len(truth_entities)
         print("\nMetrics vs. real SAML-D laundering labels (+ vs. a random-ranking baseline):")
         for k in ks:
@@ -247,8 +299,9 @@ def main() -> int:
 
     OUT.mkdir(parents=True, exist_ok=True)
     record = {
-        "dataset": {"name": "samld_sample.csv", "source": "kaggle:berkanoztas/synthetic-transaction-monitoring-dataset-aml",
-                    "rows": int(len(ls.df)), "fraud_rows": truth["fraud_row_count"]},
+        "dataset": {"name": sample_csv.name, "source": "kaggle:berkanoztas/synthetic-transaction-monitoring-dataset-aml",
+                    "rows": int(len(ls.df)), "fraud_rows": truth["fraud_row_count"],
+                    "prevalence": len(truth_entities) / max(n_total, 1)},
         "detection": {"source_type": det.source_type, "resolved_slots": resolved,
                        "unresolved_columns": unresolved, "warnings": det.warnings},
         "pipeline": {
@@ -262,8 +315,8 @@ def main() -> int:
                           "resolved_to_entity": len(truth_entities)},
         "metrics": metrics,
     }
-    (OUT / "samld_verdict.json").write_text(json.dumps(record, indent=2, default=str))
-    print(f"\nWrote {OUT / 'samld_verdict.json'}")
+    verdict_json.write_text(json.dumps(record, indent=2, default=str))
+    print(f"\nWrote {verdict_json}")
     return 0
 
 
