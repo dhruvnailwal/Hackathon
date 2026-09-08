@@ -2,8 +2,11 @@
 
 What a human reads from a report is *plain-language findings* — the top
 findings are written as sentences about real people and real records, never
-as model names or scores. Machine-readable detail (per-record scores, model
-verdicts) lives in report.json only.
+as model names or scores. Machine-readable detail (per-record scores) lives
+in report.json only — but the per-model SUPPORTED/DEGRADED/BLOCKED verdict
+("what the data could support") is shown in every format, since it's the
+project's central honesty guarantee and must be visible to the person
+reading the report, not just buried in JSON.
 
   * report.md   — plain markdown with embedded charts
   * report.html — self-contained styled HTML (charts inlined as base64)
@@ -37,6 +40,56 @@ RISK_COLORS = {
     "MEDIUM": AMBER,
     "LOW": MINT,
 }
+
+STATUS_COLORS = {
+    "SUPPORTED": MINT,
+    "DEGRADED": AMBER,
+    "BLOCKED": RED,
+}
+
+# display order/names for the sufficiency section — matches pipeline.py's
+# _run_models dispatch order, not sufficiency.py's dict insertion order
+MODEL_ORDER = ("time_correlation", "network", "statml", "benford",
+               "structuring", "behavioral", "chain")
+MODEL_DISPLAY_NAMES = {
+    "time_correlation": "Time correlation (cross-source)",
+    "network": "Network / graph structure",
+    "statml": "Statistical & ML outliers",
+    "benford": "Benford's-law deviation",
+    "structuring": "Structuring (smurfing)",
+    "behavioral": "Behavioral regime-flip",
+    "chain": "Chain / layering",
+}
+
+
+def _sufficiency_rows(res) -> List[dict]:
+    """What the sufficiency engine decided for each model — this is the
+    project's central honesty guarantee, so it must be visible in the
+    report, not just held in res.sufficiency for internal/CLI use."""
+    verdicts = getattr(res, "sufficiency", None) or {}
+    rows = []
+    for m in MODEL_ORDER:
+        v = verdicts.get(m)
+        if v is None:
+            continue
+        rows.append({"model": MODEL_DISPLAY_NAMES.get(m, m),
+                     "status": v.status, "reason": v.reason})
+    return rows
+
+
+_MODEL_WORD_RE = re.compile(r"\bmodels?\b", re.IGNORECASE)
+
+
+def _display_reason(reason: str) -> str:
+    """The human-facing report avoids the word 'model'/'models' (tested —
+    the report talks about people and evidence, not ML jargon); the raw
+    .reason string is only ever this literal for CLI/JSON consumers, which
+    keep the original wording."""
+    return _MODEL_WORD_RE.sub(lambda m: "checks" if m.group(0).lower() == "models" else "check", reason)
+
+
+def _sufficiency_rows_display(res) -> List[dict]:
+    return [{**row, "reason": _display_reason(row["reason"])} for row in _sufficiency_rows(res)]
 
 # Judge-facing report branding (shared by markdown / HTML / PDF)
 REPORT_TITLE = "Cross-Source Anomaly Intelligence Brief"
@@ -144,6 +197,15 @@ def _markdown(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = No
     for line in _overview_lines(res, insight):
         L.append(line)
     L.append("")
+
+    L.append("## What the data could support")
+    L.append("")
+    L.append("| Signal | Verdict | Why |")
+    L.append("|---|---|---|")
+    for row in _sufficiency_rows_display(res):
+        L.append(f"| {row['model']} | **{row['status']}** | {_unbold(row['reason'])} |")
+    L.append("")
+
     L.append(_md_chart(charts["people"]))
     L.append("")
 
@@ -267,6 +329,15 @@ def _html(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = None) 
         for rs in res.per_source
     ) or '<tr><td colspan="4">no source files loaded</td></tr>'
 
+    sufficiency_rows = "\n".join(
+        f'<tr><td>{_htmlize(row["model"])}</td>'
+        f'<td><span style="color:#fff;background:{STATUS_COLORS.get(row["status"], MUTED)};'
+        f'padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px;'
+        f'white-space:nowrap">{row["status"]}</span></td>'
+        f'<td>{_htmlize(row["reason"])}</td></tr>'
+        for row in _sufficiency_rows_display(res)
+    )
+
     timeline_img = _b64(charts["timeline"]) if _has_timeline(res) else ""
     sources_img = _b64(charts["sources"]) if res.per_source else ""
     sources_block = (f'<img src="{sources_img}" style="margin-top:14px">'
@@ -324,6 +395,9 @@ def _html(res, cfg, charts: Dict[str, Path], provenance: Optional[dict] = None) 
   <div class="meta">{REPORT_SUBTITLE}<br>{_generated_line(res)}<br>{_htmlize(_provenance_line(provenance))}</div>
   <div class="card">{overview_html}
     <div class="stats">{stat_chips}</div></div>
+  <div class="card"><h2>What the data could support</h2>
+    <table><thead><tr><th>signal</th><th>verdict</th><th>why</th>
+    </tr></thead><tbody>{sufficiency_rows}</tbody></table></div>
   <div class="card"><h2>The people who stand out</h2>{insight_cards}</div>
   <div class="card"><h2>When it happened</h2>{timeline_block}</div>
   <div class="card"><h2>Who the flagged people are connected to</h2>{network_block}</div>
@@ -356,6 +430,7 @@ def _json(res, cfg, provenance: Optional[dict] = None) -> dict:
             "source_files": len(res.per_source),
             "people_who_stand_out": len(res.rankings),
         },
+        "sufficiency": _sufficiency_rows(res),
         "sources": [
             {
                 "file": getattr(rs, "file", ""),
@@ -414,6 +489,39 @@ def _pdf(res, cfg, report_dir: Path, charts: Dict[str, Path], provenance: Option
     ]
     for line in _overview_lines(res, insight_list):
         story.append(Paragraph(_pdfize(line), body))
+
+    status_colors = {"SUPPORTED": colors.HexColor(MINT), "DEGRADED": colors.HexColor(AMBER),
+                      "BLOCKED": colors.HexColor(RED)}
+    badge_style = ParagraphStyle("Badge", parent=styles["BodyText"], fontSize=8,
+                                 textColor=colors.white, alignment=1, leading=10)
+    suff_rows = _sufficiency_rows_display(res)
+    if suff_rows:
+        story.append(Paragraph("What the data could support", h2))
+        table_data = [["Signal", "Verdict", "Why"]] + [
+            [Paragraph(_pdfize(row["model"]), body),
+             Paragraph(f"<b>{row['status']}</b>", badge_style),
+             Paragraph(_pdfize(row["reason"]), body)]
+            for row in suff_rows
+        ]
+        t = Table(table_data, colWidths=[42 * mm, 24 * mm, 104 * mm], rowHeights=None)
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(NAVY)),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#d5dde4")),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]
+        for i, row in enumerate(suff_rows, start=1):
+            color = status_colors.get(row["status"], colors.HexColor(MUTED))
+            style_cmds.append(("BACKGROUND", (1, i), (1, i), color))
+            if i % 2 == 0:
+                style_cmds.append(("BACKGROUND", (0, i), (0, i), colors.HexColor("#f3f8f6")))
+                style_cmds.append(("BACKGROUND", (2, i), (2, i), colors.HexColor("#f3f8f6")))
+        t.setStyle(TableStyle(style_cmds))
+        story += [Spacer(1, 2 * mm), t, Spacer(1, 3 * mm)]
+
     if charts.get("people"):
         story += [Spacer(1, 2 * mm),
                   Image(str(charts["people"]), width=170 * mm, height=64 * mm)]

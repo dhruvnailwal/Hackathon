@@ -173,6 +173,16 @@ QPushButton#IconBtn {
 QPushButton#IconBtn:hover { background: #fde7ec; color: #d0455e; }
 QPushButton#IconBtn:pressed { background: #fad5dc; color: #b53b50; }
 
+/* ---------------- text inputs --------------- */
+QLineEdit {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid #d7e8df; border-radius: 11px;
+    padding: 8px 12px; font-size: 12.5px; color: #16342a;
+    selection-background-color: #bfe5d3; selection-color: #16342a;
+}
+QLineEdit:hover { border-color: #9fdcc3; }
+QLineEdit:focus { border-color: #2fae8f; background: #ffffff; }
+
 /* ---------------- drop zone --------------- */
 #DropZone {
     background: rgba(255, 255, 255, 0.5);
